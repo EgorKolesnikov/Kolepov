@@ -16,9 +16,6 @@ EchoServer::EchoServer(QWidget *parent)
 {
     sessionOpened();
 
-    users << tr("Egor")
-          << tr("Denis");
-
     QPushButton *quitButton = new QPushButton(tr("Quit"));
     connections->setReadOnly(true);
 
@@ -26,7 +23,7 @@ EchoServer::EchoServer(QWidget *parent)
             SLOT(close())
             );
     connect(tcpServer, SIGNAL(newConnection()),
-            SLOT(replyToClient())
+            SLOT(new_user())
             );
 
     QHBoxLayout *buttonLayout = new QHBoxLayout;
@@ -72,16 +69,15 @@ void EchoServer::sessionOpened()
                          .arg(ipAddress).arg(tcpServer->serverPort()));
 }
 
-void EchoServer::replyToClient()
+void EchoServer::new_user()
 {
     QTcpSocket *clientConnection = tcpServer->nextPendingConnection();
     ServerThread *thread = new ServerThread(clientConnection->socketDescriptor(),
-                                            users,
+                                            database,
                                             this);
     connect(thread, SIGNAL(finished()), thread, SLOT(deleteLater()));
     connect(clientConnection, SIGNAL(disconnected()),
             clientConnection, SLOT(deleteLater()));
 
     thread->start();
-
 }

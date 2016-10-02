@@ -19,7 +19,7 @@ public:
 
 private slots:
     void sessionOpened();
-    void replyToClient();
+    void new_user();
 
 private:
     QLabel *statusLabel;

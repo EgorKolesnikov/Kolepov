@@ -6,11 +6,15 @@
 #include <QSqlQuery>
 #include <QSqlError>
 #include <QSqlRecord>
+#include <QMutex>
+#include <QMutexLocker>
 
 class QSqlDatabase;
 class QSqlQuery;
 class QSqlError;
 class QSqlRecord;
+class QMutex;
+class QMutexLocker;
 
 class SqlWrapper: public QObject
 {
@@ -18,8 +22,12 @@ class SqlWrapper: public QObject
 
 private:
     QSqlDatabase db_connection_;
+    QMutex mutex_;
     static QString path_to_database;
     static QString base_filename;
+
+private slots:
+    void manage_user_query();
 
 public:
     SqlWrapper(
@@ -31,7 +39,13 @@ public:
     // Test methods
     static void create_database();
     void show_table(const QString& table_name);
-    void show_messages();
+
+    // Possible queries
+    QSqlQuery get_user(const QString& user_name);
+    QSqlQuery get_message(const QString& message_id);
+    bool add_message(const QString& user_id, const QString& message_text);
+    bool delete_message(int message_id);
+    bool modify_message(int message_id, const QString& new_message_text);
 };
 
 #endif // SQLWRAPPER_H

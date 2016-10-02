@@ -5,12 +5,13 @@
 #include <QTcpSocket>
 #include <QDataStream>
 #include <QHostAddress>
+#include "sqlwrapper.h"
 
 
 class ServerThread: public QThread
 {
 public:
-    ServerThread(int socketDescriptor, const QStringList& users, QObject *parent);
+    ServerThread(int socketDescriptor, SqlWrapper *users, QObject *parent);
 
     void run() Q_DECL_OVERRIDE;
 
@@ -19,7 +20,7 @@ public:
 
 private:
     int m_socketDescriptor;
-    const QStringList& m_users;
+    SqlWrapper *database;
 };
 
 #endif // SERVERTHREAD_H
