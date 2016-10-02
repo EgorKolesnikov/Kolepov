@@ -3,7 +3,8 @@
 #include <QtWidgets>
 
 
-QString SqlWrapper::path_to_database = "/home/kolegor/Kolepov/EchoServer/";
+//QString SqlWrapper::path_to_database = "/home/kolegor/Kolepov/EchoServer/";
+QString SqlWrapper::path_to_database = "C:\\Users\\1\\Desktop\\projects\\Kolepov\\EchoServer";
 QString SqlWrapper::base_filename = "server_database.sqlite";
 
 

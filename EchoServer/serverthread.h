@@ -10,6 +10,8 @@
 
 class ServerThread: public QThread
 {
+    Q_OBJECT
+
 public:
     ServerThread(int socketDescriptor, SqlWrapper *users, QObject *parent);
 

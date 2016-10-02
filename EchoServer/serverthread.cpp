@@ -14,6 +14,7 @@ void ServerThread::run()
 
     if (!tcpSocket.setSocketDescriptor(m_socketDescriptor)) {
         qDebug() << "Error creating QTcpSocket in thread.\n";
+        emit error(tcpSocket.error());
         return;
     }
     qDebug() << m_socketDescriptor;
