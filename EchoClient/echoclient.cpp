@@ -8,6 +8,8 @@ EchoClient::EchoClient(QWidget *parent)
     , m_sendButton(new QPushButton(tr("Send")))
     , m_modifyButton(new QPushButton(tr("Modify")))
     , m_deleteButton(new QPushButton(tr("Delete")))
+    , m_userList(new QListWidget)
+    , m_moderatorList(new QListWidget)
 {
     //constructing user tab
     QWidget *userWidget = new QWidget;
@@ -20,6 +22,7 @@ EchoClient::EchoClient(QWidget *parent)
     m_messages->verticalHeader()->setVisible(false);
     m_messages->setSelectionBehavior(QAbstractItemView::SelectRows);
     m_messages->setSelectionMode(QAbstractItemView::SingleSelection);
+    m_messages->horizontalHeader()->setStretchLastSection(true);
 
     userLayout->addWidget(m_messages, 0, 0, 4, 4);
     userLayout->addWidget(m_modifyButton, 0, 4);
@@ -30,7 +33,36 @@ EchoClient::EchoClient(QWidget *parent)
     userWidget->setLayout(userLayout);
     //
 
+    //construct admin tab
+    QWidget *adminWidget = new QWidget;
+    QHBoxLayout *moderatorLayout = new QHBoxLayout;
+
+    QPushButton *toModButton = new QPushButton(tr("To Moderators"));
+    QPushButton *toUserButton = new QPushButton(tr("To Users"));
+    QVBoxLayout *buttonsLayout = new QVBoxLayout;
+
+    buttonsLayout->addStretch();
+    buttonsLayout->addWidget(toModButton);
+    buttonsLayout->addWidget(toUserButton);
+    buttonsLayout->addStretch();
+
+    QVBoxLayout *modsL = new QVBoxLayout;
+    modsL->addWidget(new QLabel(tr("Moderators")));
+    modsL->addWidget(m_moderatorList);
+
+    QVBoxLayout *usersL = new QVBoxLayout;
+    usersL->addWidget(new QLabel(tr("Users")));
+    usersL->addWidget(m_userList);
+
+    moderatorLayout->addLayout(modsL, 1);
+    moderatorLayout->addLayout(buttonsLayout);
+    moderatorLayout->addLayout(usersL, 1);
+
+    adminWidget->setLayout(moderatorLayout);
+    //
+
     m_tabWidget->addTab(userWidget, tr("Messages"));
+    m_tabWidget->addTab(adminWidget, tr("Moderators"));
 
     QHBoxLayout *mainLayout = new QHBoxLayout;
     mainLayout->addWidget(m_tabWidget);

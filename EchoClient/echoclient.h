@@ -29,6 +29,9 @@ private:
     QPushButton *m_modifyButton;
     QPushButton *m_deleteButton;
 
+    QListWidget *m_userList;
+    QListWidget *m_moderatorList;
+
     QTcpSocket *m_tcpSocket;
 };
 
