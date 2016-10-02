@@ -77,11 +77,12 @@ EchoClient::EchoClient(QWidget *parent)
 void EchoClient::show()
 {
     ConnectDialog conDial(this);
-    if (conDial.exec() != QDialog::Accepted && false)
+    if (conDial.exec() != QDialog::Accepted)
     {
-        close();
+        QWidget::close();
         return;
     }
+
     m_tcpSocket = conDial.getSocket();
     QWidget::show();
 }

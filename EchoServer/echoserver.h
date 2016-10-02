@@ -25,7 +25,7 @@ private:
     QLabel *statusLabel;
     QTcpServer *tcpServer;
     QTextEdit *connections;
-    QStringList users;
+
     SqlWrapper *database;
 };
 

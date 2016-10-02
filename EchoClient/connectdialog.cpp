@@ -2,6 +2,7 @@
 #include <QtNetwork>
 
 #include "connectdialog.h"
+#include "protocol.h"
 
 ConnectDialog::ConnectDialog(QWidget *parent)
     : QDialog(parent)
@@ -57,7 +58,7 @@ ConnectDialog::ConnectDialog(QWidget *parent)
     QPushButton *quitButton = new QPushButton(tr("Quit"));
 
     QDialogButtonBox *buttonBox = new QDialogButtonBox;
-    buttonBox->addButton(connectButton, QDialogButtonBox::ActionRole);
+    buttonBox->addButton(connectButton, QDialogButtonBox::AcceptRole);
     buttonBox->addButton(quitButton, QDialogButtonBox::RejectRole);
 
     connect(hostCombo, SIGNAL(editTextChanged(QString)),
@@ -176,12 +177,24 @@ void ConnectDialog::sendLogin()
 void ConnectDialog::showResult()
 {
     QString answer;
+    QChar ind;
 
     QDataStream in(tcpSocket);
     in.setVersion(QDataStream::Qt_4_0);
 
-    in >> answer;
+//    in.startTransaction();
+//    if (!in.commitTransaction())
+//        return;
 
-    QMessageBox::information(this, "Server Response", answer);
+    in >> ind >> answer;
+    if (ind == PROTOCOL::LOGIN_OK)
+    {
+        close();
+    }
+    else
+    {
+        QMessageBox::information(this, "Server Response", answer);
+    }
+
 }
 

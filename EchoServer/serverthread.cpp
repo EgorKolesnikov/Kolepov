@@ -1,4 +1,5 @@
 #include "serverthread.h"
+#include "protocol.h"
 
 ServerThread::ServerThread(int socketDescriptor, SqlWrapper *db,  QObject *parent)
     : QThread(parent)
@@ -36,22 +37,26 @@ void ServerThread::run()
     QDataStream out(&block, QIODevice::WriteOnly);
     out.setVersion(QDataStream::Qt_4_0);
 
+    //TODO: Make authentication function, which returns true or false
     // I know it's bad. It was too late.
     QSqlQuery qwe = database->get_user(user);
     if (qwe.isSelect())
     {
         qwe.next();
         if(qwe.value(1).toString().compare(user) != 0){
-            out << tr("Nope!");
-            tcpSocket.write(block);
-            tcpSocket.waitForBytesWritten();
+            out << PROTOCOL::LOGIN_DENIED  << tr("Nope!");
         }
         else{
-            out << tr("Ok!");
-            tcpSocket.write(block);
-            tcpSocket.waitForBytesWritten();
+            out << PROTOCOL::LOGIN_OK << tr("Ok!");
         }
     }
+    else
+    {
+        out << PROTOCOL::LOGIN_DENIED  << tr("qwe.isSelect == false");
+    }
+
+    tcpSocket.write(block);
+    tcpSocket.waitForBytesWritten();
 
 
     tcpSocket.disconnectFromHost();
