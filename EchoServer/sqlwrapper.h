@@ -12,15 +12,16 @@ class SqlWrapper: public QObject
 {
     Q_OBJECT
 
-    //"/home/kolegor/Kolepov/Kolepov/EchoClient/server_database.sqlite"
-
 private:
     QSqlDatabase db_connection_;
     static QString path_to_database;
     static QString base_filename;
 
 public:
-    SqlWrapper(QObject *parent = 0, const QString& path = SqlWrapper::path_to_database + SqlWrapper::base_filename);
+    SqlWrapper(
+            QObject *parent = 0,
+            const QString& path = SqlWrapper::path_to_database + SqlWrapper::base_filename
+    );
     ~SqlWrapper();
 
     static void create_database();

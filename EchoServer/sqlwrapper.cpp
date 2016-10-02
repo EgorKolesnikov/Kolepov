@@ -2,7 +2,7 @@
 #include <QDebug>
 #include <QtWidgets>
 
-QString SqlWrapper::path_to_database = "/home/kolegor/Kolepov/Kolepov/EchoClient/";
+QString SqlWrapper::path_to_database = "/home/kolegor/Kolepov/Kolepov/EchoServer/";
 QString SqlWrapper::base_filename = "server_database.sqlite";
 
 SqlWrapper::SqlWrapper(QObject *parent, const QString& path)
