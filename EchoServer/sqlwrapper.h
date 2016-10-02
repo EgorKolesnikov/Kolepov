@@ -1,12 +1,16 @@
 #ifndef SQLWRAPPER_H
 #define SQLWRAPPER_H
 
+#include <QWidget>
 #include <QSqlDatabase>
 #include <QSqlQuery>
-#include <QWidget>
+#include <QSqlError>
+#include <QSqlRecord>
+
 class QSqlDatabase;
 class QSqlQuery;
-
+class QSqlError;
+class QSqlRecord;
 
 class SqlWrapper: public QObject
 {
@@ -24,7 +28,10 @@ public:
     );
     ~SqlWrapper();
 
+    // Test methods
     static void create_database();
+    void show_table(const QString& table_name);
+    void show_messages();
 };
 
 #endif // SQLWRAPPER_H
