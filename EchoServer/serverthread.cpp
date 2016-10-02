@@ -13,11 +13,8 @@ void ServerThread::run()
     QTcpSocket tcpSocket;
 
     if (!tcpSocket.setSocketDescriptor(m_socketDescriptor)) {
-<<<<<<< HEAD
         emit error(tcpSocket.error());
-=======
         qDebug() << "Error creating QTcpSocket in thread.\n";
->>>>>>> 29371bcbcf4af874417fa6de7b8479337cf1b4cc
         return;
     }
 
@@ -39,20 +36,6 @@ void ServerThread::run()
     QDataStream out(&block, QIODevice::WriteOnly);
     out.setVersion(QDataStream::Qt_4_0);
 
-<<<<<<< HEAD
-    bool validUser;
-
-    if (m_users.contains(user))
-    {
-        out << tr("Ok!");
-        validUser = true;
-    }
-    else
-    {
-        out << tr("Nope!");
-        validUser = false;
-    }
-=======
     QSqlQuery qwe = database->get_user(user);
     if (qwe.isSelect())
     {
@@ -66,7 +49,6 @@ void ServerThread::run()
             out << tr("Ok!");
             tcpSocket.write(block);
             tcpSocket.waitForBytesWritten();
->>>>>>> 29371bcbcf4af874417fa6de7b8479337cf1b4cc
 
             while(!tcpSocket.waitForReadyRead()){
                 connect(tcpSocket,
@@ -74,7 +56,6 @@ void ServerThread::run()
                         this,
                         SLOT(manage_user_query()));
             }
-
         }
     }
 
@@ -83,7 +64,7 @@ void ServerThread::run()
 }
 
 
-void SqlWrapper::manage_user_query(){
+void ServerThread::manage_user_query(){
     QTcpSocket* clientSocket = (QTcpSocket*)sender();
     int socket_id=clientSocket->socketDescriptor();
 

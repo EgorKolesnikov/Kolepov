@@ -26,9 +26,6 @@ private:
     static QString path_to_database;
     static QString base_filename;
 
-private slots:
-    void manage_user_query();
-
 public:
     SqlWrapper(
             QObject *parent = 0,
