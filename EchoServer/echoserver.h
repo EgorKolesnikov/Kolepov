@@ -2,6 +2,7 @@
 #define SERVER_H
 
 #include <QWidget>
+#include "sqlwrapper.h"
 
 class QLabel;
 class QPushButton;
@@ -25,6 +26,7 @@ private:
     QTcpServer *tcpServer;
     QTextEdit *connections;
     QStringList users;
+    SqlWrapper *database;
 };
 
 #endif

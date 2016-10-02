@@ -1,0 +1,4 @@
+#ifndef CLIENTMAINFORM_H
+#define CLIENTMAINFORM_H
+
+#endif // CLIENTMAINFORM_H

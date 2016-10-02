@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT       += core gui network
+QT       += core gui network sql
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -14,7 +14,9 @@ TEMPLATE = app
 
 SOURCES += main.cpp\
         echoserver.cpp \
-    serverthread.cpp
+    serverthread.cpp \
+    sqlwrapper.cpp
 
 HEADERS  += echoserver.h \
-    serverthread.h
+    serverthread.h \
+    sqlwrapper.h

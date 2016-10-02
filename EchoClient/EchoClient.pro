@@ -17,4 +17,5 @@ SOURCES += main.cpp\
     connectdialog.cpp
 
 HEADERS  += echoclient.h \
-    connectdialog.h
+    connectdialog.h \
+    clientmainform.h

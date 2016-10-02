@@ -5,12 +5,14 @@
 
 #include "echoserver.h"
 #include "serverthread.h"
+#include "sqlwrapper.h"
 
 EchoServer::EchoServer(QWidget *parent)
     : QWidget(parent)
     , statusLabel(new QLabel)
     , tcpServer(Q_NULLPTR)
     , connections(new QTextEdit)
+    , database(new SqlWrapper(this))
 {
     sessionOpened();
 

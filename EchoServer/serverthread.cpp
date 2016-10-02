@@ -12,7 +12,6 @@ void ServerThread::run()
 {
     QTcpSocket tcpSocket;
 
-
     if (!tcpSocket.setSocketDescriptor(m_socketDescriptor)) {
      //   emit error(tcpSocket.error());
         return;
