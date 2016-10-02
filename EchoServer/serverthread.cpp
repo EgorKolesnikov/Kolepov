@@ -13,11 +13,10 @@ void ServerThread::run()
     QTcpSocket tcpSocket;
 
     if (!tcpSocket.setSocketDescriptor(m_socketDescriptor)) {
-        emit error(tcpSocket.error());
         qDebug() << "Error creating QTcpSocket in thread.\n";
         return;
     }
-
+    qDebug() << m_socketDescriptor;
 
     tcpSocket.waitForReadyRead();
 
@@ -36,6 +35,7 @@ void ServerThread::run()
     QDataStream out(&block, QIODevice::WriteOnly);
     out.setVersion(QDataStream::Qt_4_0);
 
+    // I know it's bad. It was too late.
     QSqlQuery qwe = database->get_user(user);
     if (qwe.isSelect())
     {
@@ -49,31 +49,10 @@ void ServerThread::run()
             out << tr("Ok!");
             tcpSocket.write(block);
             tcpSocket.waitForBytesWritten();
-
-            while(!tcpSocket.waitForReadyRead()){
-                connect(tcpSocket,
-                        SIGNAL(readyRead()),
-                        this,
-                        SLOT(manage_user_query()));
-            }
         }
     }
 
+
     tcpSocket.disconnectFromHost();
     tcpSocket.waitForDisconnected();
-}
-
-
-void ServerThread::manage_user_query(){
-    QTcpSocket* clientSocket = (QTcpSocket*)sender();
-    int socket_id=clientSocket->socketDescriptor();
-
-
-    // write answer to client
-    QByteArray block;
-    QDataStream out(&block, QIODevice::WriteOnly);
-    out.setVersion(QDataStream::Qt_4_0);
-
-    clientSocket->write(block);
-    clientSocket->waitForBytesWritten();
 }

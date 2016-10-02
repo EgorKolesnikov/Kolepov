@@ -3,7 +3,7 @@
 #include <QtWidgets>
 
 
-QString SqlWrapper::path_to_database = "C:\\Users\\1\\Desktop\\projects\\Kolepov\\EchoServer";
+QString SqlWrapper::path_to_database = "/home/kolegor/Kolepov/EchoServer/";
 QString SqlWrapper::base_filename = "server_database.sqlite";
 
 
@@ -62,7 +62,7 @@ bool SqlWrapper::add_message(int user_id, const QString &message_text){
     QSqlQuery query;
     query.prepare("INSERT INTO messages (message_user_id, message_text) "
                   "VALUES(message_user_id=:user_id, message_text=:m_text);");
-    query.bindValue(":m_id", message_id);
+    query.bindValue(":user_id", user_id);
     query.bindValue(":m_text", message_text);
 
     return query.exec();
@@ -82,20 +82,9 @@ bool SqlWrapper::modify_message(int message_id, const QString &new_message_text)
     QMutexLocker locker(&mutex_);
 
     QSqlQuery query;
-    query.prepare("UPDATE messages SET message_text=:new_m_text WHERE message_id=:m_id;");
+    query.prepare("UPDATE SET message_text=:new_m_text WHERE message_id=:m_id;");
     query.bindValue(":new_n_text", new_message_text);
     query.bindValue(":m_id", message_id);
-
-    return query.exec();
-}
-
-bool SqlWrapper::change_user_priveledge(int user_id, char new_role){
-    QMutexLocker locker(&mutex_);
-
-    QSqlQuery query;
-    query.prepare("UPDATE users SET role=:role WHERE use_id=:u_id;");
-    query.bindValue(":role", new_role);
-    query.bindValue(":u_id", user_id);
 
     return query.exec();
 }
