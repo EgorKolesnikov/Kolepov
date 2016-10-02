@@ -37,8 +37,12 @@ EchoClient::EchoClient(QWidget *parent)
     QWidget *adminWidget = new QWidget;
     QHBoxLayout *moderatorLayout = new QHBoxLayout;
 
-    QPushButton *toModButton = new QPushButton(tr("To Moderators"));
-    QPushButton *toUserButton = new QPushButton(tr("To Users"));
+    const QStyle *style = QApplication::style();
+
+    QPushButton *toModButton = new QPushButton;
+    toModButton->setIcon(style->standardIcon(QStyle::SP_ArrowLeft));
+    QPushButton *toUserButton = new QPushButton;
+    toUserButton->setIcon(style->standardIcon(QStyle::SP_ArrowRight));
     QVBoxLayout *buttonsLayout = new QVBoxLayout;
 
     buttonsLayout->addStretch();
