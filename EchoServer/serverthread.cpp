@@ -13,10 +13,10 @@ void ServerThread::run()
     QTcpSocket tcpSocket;
 
     if (!tcpSocket.setSocketDescriptor(m_socketDescriptor)) {
-     //   emit error(tcpSocket.error());
+        emit error(tcpSocket.error());
         return;
     }
-    qDebug() << m_socketDescriptor;
+
 
     tcpSocket.waitForReadyRead();
 
@@ -35,13 +35,17 @@ void ServerThread::run()
     QDataStream out(&block, QIODevice::WriteOnly);
     out.setVersion(QDataStream::Qt_4_0);
 
+    bool validUser;
+
     if (m_users.contains(user))
     {
         out << tr("Ok!");
+        validUser = true;
     }
     else
     {
         out << tr("Nope!");
+        validUser = false;
     }
 
     tcpSocket.write(block);
