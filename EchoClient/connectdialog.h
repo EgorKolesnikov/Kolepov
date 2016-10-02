@@ -17,6 +17,7 @@ class ConnectDialog : public QDialog
 
 public:
     explicit ConnectDialog(QWidget *parent = Q_NULLPTR);
+    QTcpSocket* getSocket() { return tcpSocket; }
 
 private slots:
     void connectToServer();

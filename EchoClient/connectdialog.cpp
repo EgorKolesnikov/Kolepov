@@ -9,7 +9,7 @@ ConnectDialog::ConnectDialog(QWidget *parent)
     , portLineEdit(new QLineEdit)
     , loginLineEdit(new QLineEdit)
     , connectButton(new QPushButton(tr("Connect")))
-    , tcpSocket(new QTcpSocket(this))
+    , tcpSocket(new QTcpSocket)
     , connectProgress(new QProgressBar)
 {
 
@@ -170,15 +170,14 @@ void ConnectDialog::sendLogin()
 
     out << loginLineEdit->text();
 
-    QTcpSocket *serverSocket = qobject_cast<QTcpSocket*>(sender());
-    serverSocket->write(block);
+    tcpSocket->write(block);
 }
 
 void ConnectDialog::showResult()
 {
     QString answer;
 
-    QDataStream in((QTcpSocket*)sender());
+    QDataStream in(tcpSocket);
     in.setVersion(QDataStream::Qt_4_0);
 
     in >> answer;

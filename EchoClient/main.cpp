@@ -1,11 +1,11 @@
-#include "connectdialog.h"
+#include "echoclient.h"
 #include <QApplication>
 
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
 
-    ConnectDialog w;
+    EchoClient w;
     w.show();
 
     return a.exec();
