@@ -45,7 +45,7 @@ QSqlQuery SqlWrapper::get_user(const QString &user_name){
     return query;
 }
 
-QSqlQuery SqlWrapper::get_message(const QString &message_id){
+QSqlQuery SqlWrapper::get_message(int message_id){
     QMutexLocker locker(&mutex_);
 
     QSqlQuery query;
@@ -82,9 +82,20 @@ bool SqlWrapper::modify_message(int message_id, const QString &new_message_text)
     QMutexLocker locker(&mutex_);
 
     QSqlQuery query;
-    query.prepare("UPDATE SET message_text=:new_m_text WHERE message_id=:m_id;");
+    query.prepare("UPDATE messages SET message_text=:new_m_text WHERE message_id=:m_id;");
     query.bindValue(":new_n_text", new_message_text);
     query.bindValue(":m_id", message_id);
+
+    return query.exec();
+}
+
+bool SqlWrapper::change_user_priveledge(int user_id, char new_role){
+    QMutexLocker locker(&mutex_);
+
+    QSqlQuery query;
+    query.prepare("UPDATE users SET role=:role WHERE use_id=:u_id;");
+    query.bindValue(":role", new_role);
+    query.bindValue(":u_id", user_id);
 
     return query.exec();
 }

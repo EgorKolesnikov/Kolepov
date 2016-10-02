@@ -42,10 +42,13 @@ public:
 
     // Possible queries
     QSqlQuery get_user(const QString& user_name);
-    QSqlQuery get_message(const QString& message_id);
-    bool add_message(const QString& user_id, const QString& message_text);
+    QSqlQuery get_message(int message_id);
+    QSqlQuery get_all_messages();
+
+    bool add_message(int user_id, const QString& message_text);
     bool delete_message(int message_id);
     bool modify_message(int message_id, const QString& new_message_text);
+    bool change_user_priveledge(int user_id, char new_role);
 };
 
 #endif // SQLWRAPPER_H
