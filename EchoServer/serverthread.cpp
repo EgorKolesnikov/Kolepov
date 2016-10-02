@@ -1,9 +1,9 @@
 #include "serverthread.h"
 
-ServerThread::ServerThread(int socketDescriptor, const QStringList& users,  QObject *parent)
+ServerThread::ServerThread(int socketDescriptor, SqlWrapper *db,  QObject *parent)
     : QThread(parent)
     , m_socketDescriptor(socketDescriptor)
-    , m_users(users)
+    , database(db)
 {
 
 }
@@ -13,7 +13,11 @@ void ServerThread::run()
     QTcpSocket tcpSocket;
 
     if (!tcpSocket.setSocketDescriptor(m_socketDescriptor)) {
+<<<<<<< HEAD
         emit error(tcpSocket.error());
+=======
+        qDebug() << "Error creating QTcpSocket in thread.\n";
+>>>>>>> 29371bcbcf4af874417fa6de7b8479337cf1b4cc
         return;
     }
 
@@ -35,6 +39,7 @@ void ServerThread::run()
     QDataStream out(&block, QIODevice::WriteOnly);
     out.setVersion(QDataStream::Qt_4_0);
 
+<<<<<<< HEAD
     bool validUser;
 
     if (m_users.contains(user))
@@ -47,12 +52,47 @@ void ServerThread::run()
         out << tr("Nope!");
         validUser = false;
     }
+=======
+    QSqlQuery qwe = database->get_user(user);
+    if (qwe.isSelect())
+    {
+        qwe.next();
+        if(qwe.value(1).toString().compare(user) != 0){
+            out << tr("Nope!");
+            tcpSocket.write(block);
+            tcpSocket.waitForBytesWritten();
+        }
+        else{
+            out << tr("Ok!");
+            tcpSocket.write(block);
+            tcpSocket.waitForBytesWritten();
+>>>>>>> 29371bcbcf4af874417fa6de7b8479337cf1b4cc
 
-    tcpSocket.write(block);
-    tcpSocket.waitForBytesWritten();
+            while(!tcpSocket.waitForReadyRead()){
+                connect(tcpSocket,
+                        SIGNAL(readyRead()),
+                        this,
+                        SLOT(manage_user_query()));
+            }
+
+        }
+    }
 
     tcpSocket.disconnectFromHost();
     tcpSocket.waitForDisconnected();
+}
 
 
+void SqlWrapper::manage_user_query(){
+    QTcpSocket* clientSocket = (QTcpSocket*)sender();
+    int socket_id=clientSocket->socketDescriptor();
+
+
+    // write answer to client
+    QByteArray block;
+    QDataStream out(&block, QIODevice::WriteOnly);
+    out.setVersion(QDataStream::Qt_4_0);
+
+    clientSocket->write(block);
+    clientSocket->waitForBytesWritten();
 }

@@ -19,4 +19,5 @@ SOURCES += main.cpp\
 
 HEADERS  += echoserver.h \
     serverthread.h \
-    sqlwrapper.h
+    sqlwrapper.h \
+    protocol.h

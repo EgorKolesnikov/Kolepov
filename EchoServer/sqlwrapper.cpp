@@ -9,6 +9,7 @@ QString SqlWrapper::base_filename = "server_database.sqlite";
 
 SqlWrapper::SqlWrapper(QObject *parent, const QString& path)
     : QObject(parent)
+    , mutex_()
 {
     db_connection_ = QSqlDatabase::addDatabase("QSQLITE");
     db_connection_.setDatabaseName(path);
@@ -27,6 +28,65 @@ SqlWrapper::~SqlWrapper(){
     if(db_connection_.open()){
         db_connection_.close();
     }
+}
+
+/*
+ *  Possible queries.
+ */
+
+QSqlQuery SqlWrapper::get_user(const QString &user_name){
+    QMutexLocker locker(&mutex_);
+
+    QSqlQuery query;
+    query.prepare("SELECT * FROM users WHERE name=:name;");
+    query.bindValue(":name", user_name);
+    query.exec();
+
+    return query;
+}
+
+QSqlQuery SqlWrapper::get_message(const QString &message_id){
+    QMutexLocker locker(&mutex_);
+
+    QSqlQuery query;
+    query.prepare("SELECT * FROM messages WHERE message_id=:m_id;");
+    query.bindValue(":m_id", message_id);
+    query.exec();
+
+    return query;
+}
+
+bool SqlWrapper::add_message(int user_id, const QString &message_text){
+    QMutexLocker locker(&mutex_);
+
+    QSqlQuery query;
+    query.prepare("INSERT INTO messages (message_user_id, message_text) "
+                  "VALUES(message_user_id=:user_id, message_text=:m_text);");
+    query.bindValue(":m_id", message_id);
+    query.bindValue(":m_text", message_text);
+
+    return query.exec();
+}
+
+bool SqlWrapper::delete_message(int message_id){
+    QMutexLocker locker(&mutex_);
+
+    QSqlQuery query;
+    query.prepare("DELETE FROM messages WHERE message_id=:m_id;");
+    query.bindValue(":m_id", message_id);
+
+    return query.exec();
+}
+
+bool SqlWrapper::modify_message(int message_id, const QString &new_message_text){
+    QMutexLocker locker(&mutex_);
+
+    QSqlQuery query;
+    query.prepare("UPDATE SET message_text=:new_m_text WHERE message_id=:m_id;");
+    query.bindValue(":new_n_text", new_message_text);
+    query.bindValue(":m_id", message_id);
+
+    return query.exec();
 }
 
 
@@ -48,19 +108,19 @@ void SqlWrapper::create_database(){
     QSqlQuery query;
 
     query_text = "CREATE TABLE users ("
-                 "user_id integer PRIMARY KEY NOT NULL, "
+                 "user_id integer PRIMARY KEY AUTOINCREMENT NOT NULL UNIQUE, "
                  "name VARCHAR(255), "
                  "role VARCHAR(1));";
     query.exec(query_text);
 
-    query.exec("INSERT INTO users VALUES(1, 'Denis', 'a');");
-    query.exec("INSERT INTO users VALUES(2, 'Egor', 'u');");
-    query.exec("INSERT INTO users VALUES(3, 'Murray', 'u');");
-    query.exec("INSERT INTO users VALUES(4, 'Henry', 'u');");
-    query.exec("INSERT INTO users VALUES(5, 'Zu', 'u');");
+    query.exec("INSERT INTO users (name, role) VALUES('Denis', 'a');");
+    query.exec("INSERT INTO users (name, role) VALUES('Egor', 'u');");
+    query.exec("INSERT INTO users (name, role) VALUES('Murray', 'u');");
+    query.exec("INSERT INTO users (name, role) VALUES('Henry', 'u');");
+    query.exec("INSERT INTO users (name, role) VALUES('Zu', 'u');");
 
     query_text = "CREATE TABLE messages("
-                 "message_id integer PRIMARY KEY NOT NULL, "
+                 "message_id integer PRIMARY KEY AUTOINCREMENT NOT NULL UNIQUE, "
                  "message_user_id integer NOT NULL, "
                  "message_text VARCHAR(1024), "
                  "FOREIGN KEY(message_user_id) REFERENCES users(user_id));";
