@@ -1,16 +1,18 @@
 #include "echoclient.h"
 
+
 EchoClient::EchoClient(QWidget *parent)
     : QWidget(parent)
     , m_tabWidget(new QTabWidget)
     , m_messages(new QTableWidget)
     , m_inputMessageEdit(new QLineEdit)
-    , m_sendButton(new QPushButton(tr("Send")))
     , m_modifyButton(new QPushButton(tr("Modify")))
     , m_deleteButton(new QPushButton(tr("Delete")))
     , m_userList(new QListWidget)
     , m_moderatorList(new QListWidget)
 {
+    QPushButton *sendButton = new QPushButton(tr("Send"));
+
     //constructing user tab
     QWidget *userWidget = new QWidget;
     QGridLayout *userLayout = new QGridLayout;
@@ -28,7 +30,7 @@ EchoClient::EchoClient(QWidget *parent)
     userLayout->addWidget(m_modifyButton, 0, 4);
     userLayout->addWidget(m_deleteButton, 1, 4);
     userLayout->addWidget(m_inputMessageEdit, 4, 0, 1, 4);
-    userLayout->addWidget(m_sendButton, 4, 4);
+    userLayout->addWidget(sendButton, 4, 4);
 
     userWidget->setLayout(userLayout);
     //
@@ -72,6 +74,9 @@ EchoClient::EchoClient(QWidget *parent)
     mainLayout->addWidget(m_tabWidget);
 
     this->setLayout(mainLayout);
+
+
+    connect(sendButton, SIGNAL(clicked(bool)), SLOT(sendMessage()));
 }
 
 void EchoClient::show()
@@ -79,15 +84,60 @@ void EchoClient::show()
     ConnectDialog conDial(this);
     if (conDial.exec() != QDialog::Accepted)
     {
+
         close();
         return;
     }
 
     m_tcpSocket = conDial.getSocket();
+    connect(m_tcpSocket, SIGNAL(readyRead()), SLOT(readServerResponse()));
+    connect(m_tcpSocket, SIGNAL(disconnected()), SLOT(serverDisconected()));
     QWidget::show();
+
 }
 
 EchoClient::~EchoClient()
 {
 
 }
+
+void EchoClient::sendMessage()
+{
+    QByteArray block;
+    QDataStream out(&block, QIODevice::WriteOnly);
+    out.setVersion(QDataStream::Qt_4_0);
+
+    out << PROTOCOL::ADD_MESSAGE << m_inputMessageEdit->text();
+    m_tcpSocket->write(block);
+}
+
+void EchoClient::serverDisconected()
+{
+    QMessageBox::information(this, tr("Disconnected"),
+            tr("Disconnected from the server"));
+    close();
+}
+
+void EchoClient::readServerResponse()
+{
+    QDataStream in(m_tcpSocket);
+    in.setVersion(QDataStream::Qt_4_0);
+
+    QString response;
+    qint32 message_id;
+    QChar ind;
+
+//    in.startTransaction();
+//    if (!in.commitTransaction())
+//        return;
+    in >> ind;
+    if      (ind == PROTOCOL::ADD_MESSAGE)
+    {
+        in >> response;
+    }
+    else if (ind == PROTOCOL::DELETE_MESSAGE)
+    {
+        in >> message_id;
+    }
+}
+

@@ -23,8 +23,12 @@ signals:
     void connectedUser(QString info);
 
 
+private slots:
+    void disconnectedUser();
+
 private:
     int m_socketDescriptor;
+    bool m_clientDisconnected;
     SqlWrapper *database;
 };
 

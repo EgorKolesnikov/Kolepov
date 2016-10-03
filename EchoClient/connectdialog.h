@@ -3,6 +3,7 @@
 
 #include <QDialog>
 #include <QTcpSocket>
+#include "protocol.h"
 
 class QComboBox;
 class QLabel;

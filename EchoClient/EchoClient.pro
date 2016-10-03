@@ -15,7 +15,8 @@ TEMPLATE = app
 
 SOURCES += main.cpp\
         echoclient.cpp \
-    connectdialog.cpp
+    connectdialog.cpp \
+    protocol.cpp
 
 HEADERS  += echoclient.h \
     connectdialog.h \

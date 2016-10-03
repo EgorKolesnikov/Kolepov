@@ -15,14 +15,16 @@ public:
     ~EchoClient();
 
 public slots:
+    void sendMessage();
     void show();
+    void readServerResponse();
+    void serverDisconected();
 
 private:
     QTabWidget *m_tabWidget;
 
     QTableWidget *m_messages;
     QLineEdit *m_inputMessageEdit;
-    QPushButton *m_sendButton;
 
     QPushButton *m_modifyButton;
     QPushButton *m_deleteButton;

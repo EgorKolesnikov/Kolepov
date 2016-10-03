@@ -2,7 +2,6 @@
 #include <QtNetwork>
 
 #include "connectdialog.h"
-#include "protocol.h"
 
 ConnectDialog::ConnectDialog(QWidget *parent)
     : QDialog(parent)
