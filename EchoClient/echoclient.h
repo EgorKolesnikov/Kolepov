@@ -14,10 +14,8 @@ public:
     EchoClient(QWidget *parent = 0);
     ~EchoClient();
 
-    void show() /*Q_DECL_OVERRIDE*/;
-
-private slots:
-
+public slots:
+    void show();
 
 private:
     QTabWidget *m_tabWidget;

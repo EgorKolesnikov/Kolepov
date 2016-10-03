@@ -1,4 +1,5 @@
 #include "echoclient.h"
+#include "connectdialog.h"
 #include <QApplication>
 
 int main(int argc, char *argv[])

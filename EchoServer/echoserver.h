@@ -18,11 +18,13 @@ public:
     explicit EchoServer(QWidget *parent = Q_NULLPTR);
 
 private slots:
-    void sessionOpened();
+    void sessionOpened(QLabel *statusLabel);
     void new_user();
+    void displayNewUser(QString username);
 
 private:
-    QLabel *statusLabel;
+    const qint16 PORT = 55555;
+
     QTcpServer *tcpServer;
     QTextEdit *connections;
 

@@ -18,7 +18,6 @@ void ServerThread::run()
         emit error(tcpSocket.error());
         return;
     }
-    qDebug() << m_socketDescriptor;
 
     tcpSocket.waitForReadyRead();
 
@@ -28,10 +27,7 @@ void ServerThread::run()
     QString user;
     in >> user;
 
-    qDebug() << (tr("Connected %1. Address %2")
-                        .arg(user)
-                        .arg(tcpSocket.peerAddress().toString())
-                        );
+    emit connectedUser(user);
 
     QByteArray block;
     QDataStream out(&block, QIODevice::WriteOnly);

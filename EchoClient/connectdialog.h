@@ -27,6 +27,8 @@ private slots:
     void showResult();
 
 private:
+    const quint16 PORT = 55555;
+
     QComboBox *hostCombo;
     QLineEdit *portLineEdit;
     QLineEdit *loginLineEdit;

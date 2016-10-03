@@ -9,12 +9,12 @@
 
 EchoServer::EchoServer(QWidget *parent)
     : QWidget(parent)
-    , statusLabel(new QLabel)
     , tcpServer(Q_NULLPTR)
     , connections(new QTextEdit)
     , database(new SqlWrapper(this))
 {
-    sessionOpened();
+    QLabel *statusLabel = new QLabel;
+    sessionOpened(statusLabel);
 
     QPushButton *quitButton = new QPushButton(tr("Quit"));
     connections->setReadOnly(true);
@@ -42,10 +42,10 @@ EchoServer::EchoServer(QWidget *parent)
     setWindowTitle(QGuiApplication::applicationDisplayName());
 }
 
-void EchoServer::sessionOpened()
+void EchoServer::sessionOpened(QLabel *statusLabel)
 {
     tcpServer = new QTcpServer(this);
-    if (!tcpServer->listen()) {
+    if (!tcpServer->listen(QHostAddress::Any, PORT)) {
         QMessageBox::critical(this, tr("Server"),
                               tr("Unable to start the server: %1.")
                               .arg(tcpServer->errorString()));
@@ -78,6 +78,12 @@ void EchoServer::new_user()
     connect(thread, SIGNAL(finished()), thread, SLOT(deleteLater()));
     connect(clientConnection, SIGNAL(disconnected()),
             clientConnection, SLOT(deleteLater()));
+    connect(thread, SIGNAL(connectedUser(QString)), SLOT(displayNewUser(QString)));
 
     thread->start();
+}
+
+void EchoServer::displayNewUser(QString username)
+{
+    connections->append(username);
 }

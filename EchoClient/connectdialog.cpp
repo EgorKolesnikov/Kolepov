@@ -42,6 +42,7 @@ ConnectDialog::ConnectDialog(QWidget *parent)
     }
 
     portLineEdit->setValidator(new QIntValidator(1, 65535, this));
+    portLineEdit->setText(QString::number(PORT));
 
     QLabel *hostLabel = new QLabel(tr("&Server name:"));
     hostLabel->setBuddy(hostCombo);
@@ -60,6 +61,9 @@ ConnectDialog::ConnectDialog(QWidget *parent)
     QDialogButtonBox *buttonBox = new QDialogButtonBox;
     buttonBox->addButton(connectButton, QDialogButtonBox::AcceptRole);
     buttonBox->addButton(quitButton, QDialogButtonBox::RejectRole);
+    connect(buttonBox, SIGNAL(rejected()),
+            SLOT(reject())
+            );
 
     connect(hostCombo, SIGNAL(editTextChanged(QString)),
             SLOT(enableConnectButton())
@@ -72,9 +76,6 @@ ConnectDialog::ConnectDialog(QWidget *parent)
             );
     connect(connectButton, SIGNAL(clicked(bool)),
             SLOT(connectToServer())
-            );
-    connect(quitButton, SIGNAL(clicked(bool)),
-            SLOT(close())
             );
     connect(tcpSocket, SIGNAL(error(QAbstractSocket::SocketError)),
             SLOT(displayError(QAbstractSocket::SocketError))
@@ -189,7 +190,7 @@ void ConnectDialog::showResult()
     in >> ind >> answer;
     if (ind == PROTOCOL::LOGIN_OK)
     {
-        close();
+        this->accept();
     }
     else
     {

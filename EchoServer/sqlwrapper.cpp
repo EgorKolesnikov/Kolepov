@@ -3,8 +3,8 @@
 #include <QtWidgets>
 
 
-QString SqlWrapper::path_to_database = "/home/kolegor/Kolepov/EchoServer/";
-//QString SqlWrapper::path_to_database = "C:\\Users\\1\\Desktop\\projects\\Kolepov\\EchoServer";
+//QString SqlWrapper::path_to_database = "/home/kolegor/Kolepov/EchoServer/";
+QString SqlWrapper::path_to_database = "C:\\Users\\1\\Desktop\\projects\\Kolepov\\EchoServer";
 QString SqlWrapper::base_filename = "server_database.sqlite";
 
 
@@ -14,19 +14,20 @@ SqlWrapper::SqlWrapper(QObject *parent, const QString& path)
 {
     db_connection_ = QSqlDatabase::addDatabase("QSQLITE");
     db_connection_.setDatabaseName(path);
-    db_connection_.open();
+//    db_connection_.open();
 
     if (!db_connection_.open()) {
-        QMessageBox::critical(0, qApp->tr("Cannot open database"),
+        QMessageBox::critical(0, qApp->tr("Cannot open database."),
             qApp->tr("Unable to establish the database connection.\n"
-                     "Click Cancel to exit."), QMessageBox::Cancel);
+                     "%1").arg(db_connection_.lastError().text()),
+                              QMessageBox::Cancel);
         return;
     }
 }
 
 
 SqlWrapper::~SqlWrapper(){
-    if(db_connection_.open()){
+    if(db_connection_.isOpen()){
         db_connection_.close();
     }
 }

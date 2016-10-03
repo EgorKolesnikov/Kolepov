@@ -20,6 +20,7 @@ public:
 
 signals:
     void error(QTcpSocket::SocketError socketError);
+    void connectedUser(QString info);
 
 
 private:

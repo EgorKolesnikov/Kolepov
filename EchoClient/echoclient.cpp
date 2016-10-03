@@ -79,7 +79,7 @@ void EchoClient::show()
     ConnectDialog conDial(this);
     if (conDial.exec() != QDialog::Accepted)
     {
-        QWidget::close();
+        close();
         return;
     }
 
