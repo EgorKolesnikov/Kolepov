@@ -59,6 +59,7 @@ void ServerThread::run()
     {
         tcpSocket.disconnectFromHost();
         tcpSocket.waitForDisconnected();
+        return;
     }
 
     emit connectedUser(user);
@@ -66,6 +67,24 @@ void ServerThread::run()
     connect(&tcpSocket, SIGNAL(disconnected()),
             SLOT(disconnectedUser()));
 
+    //Sending all messages from database
+    qwe = database->get_all_messages();
+    if (qwe.isSelect())
+    {
+        while(qwe.next())
+        {
+            QDataStream out(&block, QIODevice::WriteOnly);
+            out.setVersion(QDataStream::Qt_4_0);
+            block.clear();
+            out << PROTOCOL::ADD_MESSAGE
+                << qwe.value("message_id").toInt()
+                << qwe.value("name").toString()
+                << qwe.value("text").toString();
+
+            tcpSocket.write(block);
+        }
+
+    }
 
     //Main cycle
     while(!m_clientDisconnected)

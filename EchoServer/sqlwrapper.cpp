@@ -10,7 +10,6 @@ QString SqlWrapper::base_filename = "server_database.sqlite";
 
 SqlWrapper::SqlWrapper(QObject *parent, const QString& path)
     : QObject(parent)
-    , mutex_()
 {
     db_connection_ = QSqlDatabase::addDatabase("QSQLITE");
     db_connection_.setDatabaseName(path);
@@ -32,12 +31,24 @@ SqlWrapper::~SqlWrapper(){
     }
 }
 
+QSqlQuery SqlWrapper::get_all_messages()
+{
+    QMutexLocker locker(&mutex_);
+
+    QSqlQuery query;
+
+    query.exec("SELECT name, message_id, text "
+               "FROM messages NATURAL JOIN users;");
+
+    return query;
+}
+
 /*
  *  Possible queries.
  */
 
 QSqlQuery SqlWrapper::get_user(const QString &user_name){
-    QMutexLocker locker(&mutex_);
+    QMutexLocker locker(&mutex_users_);
 
     QSqlQuery query;
     query.prepare("SELECT * FROM users WHERE name=?;");
@@ -62,8 +73,8 @@ bool SqlWrapper::add_message(int user_id, const QString &message_text){
     QMutexLocker locker(&mutex_);
 
     QSqlQuery query;
-    query.prepare("INSERT INTO messages (message_user_id, message_text) "
-                  "VALUES(message_user_id=:user_id, message_text=:m_text);");
+    query.prepare("INSERT INTO messages (user_id, text) "
+                  "VALUES(user_id=:user_id, text=:m_text);");
     query.bindValue(":user_id", user_id);
     query.bindValue(":m_text", message_text);
 
@@ -84,7 +95,7 @@ bool SqlWrapper::modify_message(int message_id, const QString &new_message_text)
     QMutexLocker locker(&mutex_);
 
     QSqlQuery query;
-    query.prepare("UPDATE SET message_text=:new_m_text WHERE message_id=:m_id;");
+    query.prepare("UPDATE messages SET text=:new_m_text WHERE message_id=:m_id;");
     query.bindValue(":new_n_text", new_message_text);
     query.bindValue(":m_id", message_id);
 
@@ -109,6 +120,9 @@ void SqlWrapper::create_database(){
     QString query_text = "";
     QSqlQuery query;
 
+    query.exec("DROP TABLE users;");
+    query.exec("DROP TABLE messages;");
+
     query_text = "CREATE TABLE users ("
                  "user_id integer PRIMARY KEY AUTOINCREMENT NOT NULL UNIQUE, "
                  "name VARCHAR(255), "
@@ -123,10 +137,12 @@ void SqlWrapper::create_database(){
 
     query_text = "CREATE TABLE messages("
                  "message_id integer PRIMARY KEY AUTOINCREMENT NOT NULL UNIQUE, "
-                 "message_user_id integer NOT NULL, "
-                 "message_text VARCHAR(1024), "
-                 "FOREIGN KEY(message_user_id) REFERENCES users(user_id));";
+                 "user_id integer NOT NULL, "
+                 "text VARCHAR(1024), "
+                 "FOREIGN KEY(user_id) REFERENCES users(user_id));";
     query.exec(query_text);
+
+    query.exec("INSERT INTO messages (user_id, text) VALUES (2, 'Test message');");
 
     qDebug() << query.lastError().text() << "\n";
     db.close();
@@ -134,6 +150,7 @@ void SqlWrapper::create_database(){
 
 
 void SqlWrapper::show_table(const QString& table_name){
+
     QString query_text = "";
     QSqlQuery query;
 

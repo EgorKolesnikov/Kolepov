@@ -23,6 +23,7 @@ class SqlWrapper: public QObject
 private:
     QSqlDatabase db_connection_;
     QMutex mutex_;
+    QMutex mutex_users_;
     static QString path_to_database;
     static QString base_filename;
 
@@ -37,6 +38,8 @@ public:
     // Test methods
     static void create_database();
     void show_table(const QString& table_name);
+
+    QSqlQuery get_all_messages();
 
     // Possible queries
     QSqlQuery get_user(const QString& user_name);

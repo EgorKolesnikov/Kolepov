@@ -17,11 +17,12 @@ EchoClient::EchoClient(QWidget *parent)
     QWidget *userWidget = new QWidget;
     QGridLayout *userLayout = new QGridLayout;
 
-    m_messages->setColumnCount(2);
+    m_messages->setColumnCount(3);
     m_messages->setHorizontalHeaderLabels(
-                {tr("User"), tr("Message")}
+                {tr("User"), tr("_Message ID"), tr("Message")}
                 );
     m_messages->verticalHeader()->setVisible(false);
+    m_messages->hideColumn(1);
     m_messages->setSelectionBehavior(QAbstractItemView::SelectRows);
     m_messages->setSelectionMode(QAbstractItemView::SingleSelection);
     m_messages->horizontalHeader()->setStretchLastSection(true);
@@ -123,21 +124,31 @@ void EchoClient::readServerResponse()
     QDataStream in(m_tcpSocket);
     in.setVersion(QDataStream::Qt_4_0);
 
-    QString response;
-    qint32 message_id;
     QChar ind;
 
 //    in.startTransaction();
 //    if (!in.commitTransaction())
 //        return;
+
     in >> ind;
+
     if      (ind == PROTOCOL::ADD_MESSAGE)
     {
-        in >> response;
+        QString text, name;
+        int messageId;
+        in >> messageId >> name >> text;
+        addMessage(messageId, name, text);
     }
-    else if (ind == PROTOCOL::DELETE_MESSAGE)
-    {
-        in >> message_id;
-    }
+
+}
+
+void EchoClient::addMessage(int messageId,
+                            const QString& user, const QString& text)
+{
+    int rowNum = m_messages->rowCount();
+    m_messages->insertRow(rowNum);
+    m_messages->setItem(rowNum, 0, new QTableWidgetItem(user));
+    m_messages->setItem(rowNum, 1, new QTableWidgetItem(QString::number(messageId)));
+    m_messages->setItem(rowNum, 2, new QTableWidgetItem(text));
 }
 
