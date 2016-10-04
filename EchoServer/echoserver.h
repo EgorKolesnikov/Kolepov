@@ -24,7 +24,11 @@ private slots:
     void new_user();
     void addNewUserToMap(QString name, QTcpSocket* tcpSocket);
     void removeUserFromMap(QString name);
-    void sendMessage(QString name, QString message);
+
+    void sendMessage(const QString& name, int user_id, const QString& message);
+    void deleteMessage(const QString& name, int message_id);
+    void modifyMessage(const QString& name, int message_id, const QString& new_message_text);
+    void changeUserRole(const QString& who_changing, const QString& change_him, QChar new_role);
 
 private:
     const qint16 PORT = 55555;

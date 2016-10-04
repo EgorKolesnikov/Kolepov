@@ -3,17 +3,27 @@
 #include <QtWidgets>
 
 
-//QString SqlWrapper::path_to_database = "/home/kolegor/Kolepov/EchoServer/";
-QString SqlWrapper::path_to_database = "C:\\Users\\1\\Desktop\\projects\\Kolepov\\EchoServer";
+class Sleeper: public QThread
+{
+    public:
+        static void msleep(int ms)
+        {
+            QThread::msleep(ms);
+        }
+};
+
+
+QString SqlWrapper::path_to_database = "/home/kolegor/Kolepov/EchoServer/";
+//QString SqlWrapper::path_to_database = "C:\\Users\\1\\Desktop\\projects\\Kolepov\\EchoServer";
 QString SqlWrapper::base_filename = "server_database.sqlite";
 
 
 SqlWrapper::SqlWrapper(QObject *parent, const QString& path)
     : QObject(parent)
+    , mutex_()
 {
     db_connection_ = QSqlDatabase::addDatabase("QSQLITE");
     db_connection_.setDatabaseName(path);
-//    db_connection_.open();
 
     if (!db_connection_.open()) {
         QMessageBox::critical(0, qApp->tr("Cannot open database."),
@@ -31,24 +41,16 @@ SqlWrapper::~SqlWrapper(){
     }
 }
 
-QSqlQuery SqlWrapper::get_all_messages()
-{
-    QMutexLocker locker(&mutex_);
+const int wait = 100;
 
-    QSqlQuery query;
-
-    query.exec("SELECT name, message_id, text "
-               "FROM messages NATURAL JOIN users;");
-
-    return query;
-}
 
 /*
  *  Possible queries.
  */
 
 QSqlQuery SqlWrapper::get_user(const QString &user_name){
-    QMutexLocker locker(&mutex_users_);
+    QMutexLocker locker(&mutex_);
+    Sleeper::msleep(wait);
 
     QSqlQuery query;
     query.prepare("SELECT * FROM users WHERE name=?;");
@@ -60,6 +62,7 @@ QSqlQuery SqlWrapper::get_user(const QString &user_name){
 
 QSqlQuery SqlWrapper::get_message(int message_id){
     QMutexLocker locker(&mutex_);
+    Sleeper::msleep(wait);
 
     QSqlQuery query;
     query.prepare("SELECT * FROM messages WHERE message_id=:m_id;");
@@ -69,8 +72,33 @@ QSqlQuery SqlWrapper::get_message(int message_id){
     return query;
 }
 
+QSqlQuery SqlWrapper::get_message_id(const QString& message){
+    QMutexLocker locker(&mutex_);
+    Sleeper::msleep(wait);
+
+    QSqlQuery query;
+    query.prepare("SELECT * FROM messages WHERE text=:m_txt;");
+    query.bindValue(":m_txt", message);
+    query.exec();
+
+    return query;
+}
+
+QSqlQuery SqlWrapper::get_all_messages()
+{
+    QMutexLocker locker(&mutex_);
+    Sleeper::msleep(wait);
+
+    QSqlQuery query;
+    query.exec("SELECT name, message_id, text "
+               "FROM messages NATURAL JOIN users;");
+
+    return query;
+}
+
 bool SqlWrapper::add_message(int user_id, const QString &message_text){
     QMutexLocker locker(&mutex_);
+    Sleeper::msleep(wait);
 
     QSqlQuery query;
     query.prepare("INSERT INTO messages (user_id, text) "
@@ -83,6 +111,7 @@ bool SqlWrapper::add_message(int user_id, const QString &message_text){
 
 bool SqlWrapper::delete_message(int message_id){
     QMutexLocker locker(&mutex_);
+    Sleeper::msleep(wait);
 
     QSqlQuery query;
     query.prepare("DELETE FROM messages WHERE message_id=:m_id;");
@@ -93,11 +122,24 @@ bool SqlWrapper::delete_message(int message_id){
 
 bool SqlWrapper::modify_message(int message_id, const QString &new_message_text){
     QMutexLocker locker(&mutex_);
+    Sleeper::msleep(wait);
 
     QSqlQuery query;
     query.prepare("UPDATE messages SET text=:new_m_text WHERE message_id=:m_id;");
     query.bindValue(":new_n_text", new_message_text);
     query.bindValue(":m_id", message_id);
+
+    return query.exec();
+}
+
+bool SqlWrapper::change_user_role(const QString &user_name, QChar new_role){
+    QMutexLocker locker(&mutex_);
+    Sleeper::msleep(wait);
+
+    QSqlQuery query;
+    query.prepare("UPDATE users SET role=:n_role WHERE name=:u_name;");
+    query.bindValue(":n_role", new_role);
+    query.bindValue(":u_name", user_name);
 
     return query.exec();
 }

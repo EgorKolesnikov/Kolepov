@@ -23,7 +23,6 @@ class SqlWrapper: public QObject
 private:
     QSqlDatabase db_connection_;
     QMutex mutex_;
-    QMutex mutex_users_;
     static QString path_to_database;
     static QString base_filename;
 
@@ -39,15 +38,16 @@ public:
     static void create_database();
     void show_table(const QString& table_name);
 
-    QSqlQuery get_all_messages();
-
     // Possible queries
     QSqlQuery get_user(const QString& user_name);
     QSqlQuery get_message(int message_id);
+    QSqlQuery get_message_id(const QString& message);
+    QSqlQuery get_all_messages();
 
     bool add_message(int user_id, const QString& message_text);
     bool delete_message(int message_id);
     bool modify_message(int message_id, const QString& new_message_text);
+    bool change_user_role(const QString& user_name, QChar new_role);
 };
 
 #endif // SQLWRAPPER_H

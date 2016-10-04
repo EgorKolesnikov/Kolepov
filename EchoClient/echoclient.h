@@ -22,6 +22,7 @@ public slots:
 
 private:
     void addMessage(int messageId, const QString& user, const QString& text);
+
 private:
     QTabWidget *m_tabWidget;
 

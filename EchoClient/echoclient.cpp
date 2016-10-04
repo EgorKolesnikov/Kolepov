@@ -85,7 +85,6 @@ void EchoClient::show()
     ConnectDialog conDial(this);
     if (conDial.exec() != QDialog::Accepted)
     {
-
         close();
         return;
     }
@@ -111,6 +110,7 @@ void EchoClient::sendMessage()
 
     out << PROTOCOL::ADD_MESSAGE << m_inputMessageEdit->text();
     m_tcpSocket->write(block);
+    m_tcpSocket->flush();
 }
 
 void EchoClient::serverDisconected()
@@ -127,13 +127,13 @@ void EchoClient::readServerResponse()
 
     QChar ind;
 
-//    in.startTransaction();
-//    if (!in.commitTransaction())
-//        return;
+    in.startTransaction();
+    if (!in.commitTransaction())
+        return;
 
     in >> ind;
 
-    if      (ind == PROTOCOL::ADD_MESSAGE)
+    if(ind == PROTOCOL::ADD_MESSAGE)
     {
         QString text, name;
         int messageId;
