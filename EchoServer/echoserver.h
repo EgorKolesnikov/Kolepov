@@ -2,6 +2,8 @@
 #define SERVER_H
 
 #include <QWidget>
+#include <QMap>
+#include <QTcpSocket>
 #include "sqlwrapper.h"
 
 class QLabel;
@@ -20,10 +22,13 @@ public:
 private slots:
     void sessionOpened(QLabel *statusLabel);
     void new_user();
-    void displayNewUser(QString username);
+    void addNewUserToMap(QString name, QTcpSocket* tcpSocket);
+    void removeUserFromMap(QString name);
 
 private:
     const qint16 PORT = 55555;
+
+    QMap<QString, QTcpSocket*> m_userSocket;
 
     QTcpServer *tcpServer;
     QTextEdit *connections;

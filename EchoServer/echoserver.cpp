@@ -77,13 +77,24 @@ void EchoServer::new_user()
                                             this);
     connect(thread, SIGNAL(finished()), thread, SLOT(deleteLater()));
     connect(clientConnection, SIGNAL(disconnected()),
-            clientConnection, SLOT(deleteLater()));
-    connect(thread, SIGNAL(connectedUser(QString)), SLOT(displayNewUser(QString)));
-
+            clientConnection, SLOT(deleteLater())
+            );
+    connect(thread, SIGNAL(connectedUser(QString, QTcpSocket*)),
+            SLOT(addNewUserToMap(QString,QTcpSocket*))
+            );
+    connect(thread, SIGNAL(removeUser(QString)),
+            SLOT(removeUserFromMap(QString)));
     thread->start();
 }
 
-void EchoServer::displayNewUser(QString username)
+void EchoServer::addNewUserToMap(QString name, QTcpSocket* tcpSocket)
 {
-    connections->append(username);
+    m_userSocket[name] = tcpSocket;
+    connections->append(name);
+}
+
+void EchoServer::removeUserFromMap(QString name)
+{
+    m_userSocket.remove(name);
+    qDebug() << name << " removed";
 }

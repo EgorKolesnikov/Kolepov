@@ -20,7 +20,9 @@ public:
 
 signals:
     void error(QTcpSocket::SocketError socketError);
-    void connectedUser(QString info);
+    void connectedUser(QString name, QTcpSocket* tcpSocket);
+    void addMessage(QString);
+    void removeUser(QString name);
 
 
 private slots:

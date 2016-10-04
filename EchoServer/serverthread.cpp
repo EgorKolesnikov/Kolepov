@@ -62,7 +62,7 @@ void ServerThread::run()
         return;
     }
 
-    emit connectedUser(user);
+    emit connectedUser(user, &tcpSocket);
 
     connect(&tcpSocket, SIGNAL(disconnected()),
             SLOT(disconnectedUser()));
@@ -103,15 +103,14 @@ void ServerThread::run()
             if  (ind == PROTOCOL::ADD_MESSAGE)
             {
                 in >> request;
-                //only show in server
-                emit connectedUser(request);
+                emit addMessage(request);
             }
         }
     }
+    emit removeUser(user);
 }
 
 void ServerThread::disconnectedUser()
 {
     m_clientDisconnected = true;
-    qDebug() << tr("User disconnected");
 }
