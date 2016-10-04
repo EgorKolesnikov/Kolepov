@@ -149,8 +149,16 @@ void EchoClient::addMessage(int messageId,
     qDebug() << "Client: get new message";
     int rowNum = m_messages->rowCount();
     m_messages->insertRow(rowNum);
-    m_messages->setItem(rowNum, 0, new QTableWidgetItem(user));
-    m_messages->setItem(rowNum, 1, new QTableWidgetItem(QString::number(messageId)));
-    m_messages->setItem(rowNum, 2, new QTableWidgetItem(text));
+
+    QTableWidgetItem* items[3];
+    items[0] = new QTableWidgetItem(user);
+    items[1] = new QTableWidgetItem(QString::number(messageId));
+    items[2] = new QTableWidgetItem(text);
+
+    for (int i = 0; i < 3; ++i)
+    {
+        items[i]->setFlags(items[i]->flags() & (~Qt::ItemIsEditable));
+        m_messages->setItem(rowNum, i, items[i]);
+    }
 }
 

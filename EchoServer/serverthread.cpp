@@ -47,6 +47,7 @@ void ServerThread::run()
 
     tcpSocket.write(block);
     tcpSocket.flush();
+    tcpSocket.waitForBytesWritten();
 
     if (!authPassed)
     {
@@ -62,7 +63,7 @@ void ServerThread::run()
 
     //Sending all messages from database
     QSqlQuery qwe = database->get_all_messages();
-    if (qwe.isSelect()) {
+    if (qwe.isActive()) {
         while(qwe.next()) {
             QDataStream out(&block, QIODevice::WriteOnly);
             out.setVersion(QDataStream::Qt_4_0);
@@ -74,6 +75,7 @@ void ServerThread::run()
 
             tcpSocket.write(block);
             tcpSocket.flush();
+            tcpSocket.waitForBytesWritten();
         }
     }
 
@@ -102,7 +104,7 @@ int ServerThread::authenticate(const QString &user_name){
     if (query.isActive()) {
         query.next();
         if(query.value(1).toString().compare(user_name) == 0){
-            qDebug() << query.value(0).toInt();
+            qDebug() << "ServerThread: user id " << query.value(0).toInt();
             return query.value(0).toInt();
         }
         else{

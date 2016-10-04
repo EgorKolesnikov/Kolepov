@@ -13,8 +13,8 @@ class Sleeper: public QThread
 };
 
 
-QString SqlWrapper::path_to_database = "/home/kolegor/Kolepov/EchoServer/";
-//QString SqlWrapper::path_to_database = "C:\\Users\\1\\Desktop\\projects\\Kolepov\\EchoServer";
+//QString SqlWrapper::path_to_database = "/home/kolegor/Kolepov/EchoServer/";
+QString SqlWrapper::path_to_database = "C:\\Users\\1\\Desktop\\projects\\Kolepov\\EchoServer";
 QString SqlWrapper::base_filename = "server_database.sqlite";
 
 
@@ -50,7 +50,7 @@ const int wait = 100;
 
 QSqlQuery SqlWrapper::get_user(const QString &user_name){
     QMutexLocker locker(&mutex_);
-    Sleeper::msleep(wait);
+   // Sleeper::msleep(wait);
 
     QSqlQuery query;
     query.prepare("SELECT * FROM users WHERE name=?;");
@@ -62,7 +62,7 @@ QSqlQuery SqlWrapper::get_user(const QString &user_name){
 
 QSqlQuery SqlWrapper::get_message(int message_id){
     QMutexLocker locker(&mutex_);
-    Sleeper::msleep(wait);
+   // Sleeper::msleep(wait);
 
     QSqlQuery query;
     query.prepare("SELECT * FROM messages WHERE message_id=:m_id;");
@@ -74,7 +74,7 @@ QSqlQuery SqlWrapper::get_message(int message_id){
 
 QSqlQuery SqlWrapper::get_message_id(const QString& message){
     QMutexLocker locker(&mutex_);
-    Sleeper::msleep(wait);
+   // Sleeper::msleep(wait);
 
     QSqlQuery query;
     query.prepare("SELECT * FROM messages WHERE text=:m_txt;");
@@ -87,7 +87,7 @@ QSqlQuery SqlWrapper::get_message_id(const QString& message){
 QSqlQuery SqlWrapper::get_all_messages()
 {
     QMutexLocker locker(&mutex_);
-    Sleeper::msleep(wait);
+    //Sleeper::msleep(wait);
 
     QSqlQuery query;
     query.exec("SELECT name, message_id, text "
@@ -98,20 +98,20 @@ QSqlQuery SqlWrapper::get_all_messages()
 
 bool SqlWrapper::add_message(int user_id, const QString &message_text){
     QMutexLocker locker(&mutex_);
-    Sleeper::msleep(wait);
+    //Sleeper::msleep(wait);
 
     QSqlQuery query;
     query.prepare("INSERT INTO messages (user_id, text) "
-                  "VALUES(user_id=:user_id, text=:m_text);");
-    query.bindValue(":user_id", user_id);
-    query.bindValue(":m_text", message_text);
+                  "VALUES(:u_id, :m_txt);");
+    query.bindValue(":u_id", user_id);
+    query.bindValue(":m_txt", message_text);
 
     return query.exec();
 }
 
 bool SqlWrapper::delete_message(int message_id){
     QMutexLocker locker(&mutex_);
-    Sleeper::msleep(wait);
+    //Sleeper::msleep(wait);
 
     QSqlQuery query;
     query.prepare("DELETE FROM messages WHERE message_id=:m_id;");
@@ -122,7 +122,7 @@ bool SqlWrapper::delete_message(int message_id){
 
 bool SqlWrapper::modify_message(int message_id, const QString &new_message_text){
     QMutexLocker locker(&mutex_);
-    Sleeper::msleep(wait);
+    //Sleeper::msleep(wait);
 
     QSqlQuery query;
     query.prepare("UPDATE messages SET text=:new_m_text WHERE message_id=:m_id;");

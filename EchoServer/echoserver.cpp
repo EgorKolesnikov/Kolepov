@@ -125,8 +125,14 @@ void EchoServer::sendMessage(const QString& name, int user_id, const QString& me
     QDataStream out(&block, QIODevice::WriteOnly);
     out.setVersion(QDataStream::Qt_4_0);
 
-    bool success = database->add_message(user_id, message);
+    if (!database->add_message(user_id, message))
+    {
+        qDebug() << "Server: error while additing message";
+        return;
+    }
+
     QSqlQuery added_message = database->get_message_id(message);
+    added_message.next();
 
     out << PROTOCOL::ADD_MESSAGE
         << added_message.value(0).toInt()
