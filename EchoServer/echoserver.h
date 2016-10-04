@@ -24,6 +24,7 @@ private slots:
     void new_user();
     void addNewUserToMap(QString name, QTcpSocket* tcpSocket);
     void removeUserFromMap(QString name);
+    void sendMessage(QString name, QString message);
 
 private:
     const qint16 PORT = 55555;

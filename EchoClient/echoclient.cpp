@@ -104,6 +104,7 @@ EchoClient::~EchoClient()
 
 void EchoClient::sendMessage()
 {
+    qDebug() << "Client: send new message";
     QByteArray block;
     QDataStream out(&block, QIODevice::WriteOnly);
     out.setVersion(QDataStream::Qt_4_0);
@@ -145,6 +146,7 @@ void EchoClient::readServerResponse()
 void EchoClient::addMessage(int messageId,
                             const QString& user, const QString& text)
 {
+    qDebug() << "Client: get new message";
     int rowNum = m_messages->rowCount();
     m_messages->insertRow(rowNum);
     m_messages->setItem(rowNum, 0, new QTableWidgetItem(user));

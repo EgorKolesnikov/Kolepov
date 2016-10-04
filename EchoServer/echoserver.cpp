@@ -6,6 +6,8 @@
 #include "echoserver.h"
 #include "serverthread.h"
 #include "sqlwrapper.h"
+#include "protocol.h"
+
 
 EchoServer::EchoServer(QWidget *parent)
     : QWidget(parent)
@@ -80,10 +82,14 @@ void EchoServer::new_user()
             clientConnection, SLOT(deleteLater())
             );
     connect(thread, SIGNAL(connectedUser(QString, QTcpSocket*)),
-            SLOT(addNewUserToMap(QString,QTcpSocket*))
+            SLOT(addNewUserToMap(QString, QTcpSocket*))
             );
     connect(thread, SIGNAL(removeUser(QString)),
-            SLOT(removeUserFromMap(QString)));
+            SLOT(removeUserFromMap(QString))
+            );
+    connect(thread, SIGNAL(addMessage(QString,QString)),
+            SLOT(sendMessage(QString,QString))
+            );
     thread->start();
 }
 
@@ -97,4 +103,23 @@ void EchoServer::removeUserFromMap(QString name)
 {
     m_userSocket.remove(name);
     qDebug() << name << " removed";
+}
+
+void EchoServer::sendMessage(QString name, QString message)
+{
+    QByteArray block;
+    QDataStream out(&block, QIODevice::WriteOnly);
+    out.setVersion(QDataStream::Qt_4_0);
+    out << PROTOCOL::ADD_MESSAGE
+        << 0
+        << name
+        << message;
+
+    for (auto it = m_userSocket.cbegin();
+         it != m_userSocket.cend(); ++it)
+    {
+        qDebug() << "Sever: send message";
+        it.value()->write(block);
+    }
+
 }

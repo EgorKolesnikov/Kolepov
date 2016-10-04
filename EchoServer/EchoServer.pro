@@ -15,7 +15,8 @@ TEMPLATE = app
 SOURCES += main.cpp\
         echoserver.cpp \
     serverthread.cpp \
-    sqlwrapper.cpp
+    sqlwrapper.cpp \
+    protocol.cpp
 
 HEADERS  += echoserver.h \
     serverthread.h \

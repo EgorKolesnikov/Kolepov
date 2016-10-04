@@ -103,7 +103,8 @@ void ServerThread::run()
             if  (ind == PROTOCOL::ADD_MESSAGE)
             {
                 in >> request;
-                emit addMessage(request);
+                qDebug() << "ServerThread: get new message";
+                emit addMessage(user, request);
             }
         }
     }
