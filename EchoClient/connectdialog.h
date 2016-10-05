@@ -3,6 +3,7 @@
 
 #include <QDialog>
 #include <QTcpSocket>
+#include <QLineEdit>
 #include "protocol.h"
 
 class QComboBox;
@@ -18,7 +19,9 @@ class ConnectDialog : public QDialog
 
 public:
     explicit ConnectDialog(QWidget *parent = Q_NULLPTR);
-    QTcpSocket* getSocket() { return tcpSocket; }
+
+    QTcpSocket* socket() { return tcpSocket; }
+    QString username() { return loginLineEdit->text(); }
 
 private slots:
     void connectToServer();

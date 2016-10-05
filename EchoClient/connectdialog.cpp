@@ -107,7 +107,7 @@ ConnectDialog::ConnectDialog(QWidget *parent)
 
     this->setLayout(mainLayout);
 
-    setWindowTitle(QGuiApplication::applicationDisplayName());
+    setWindowTitle(tr("Connection"));
     loginLineEdit->setFocus();
 }
 

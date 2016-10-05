@@ -135,9 +135,10 @@ void EchoClient::show()
         return;
     }
 
-    m_tcpSocket = conDial.getSocket();
+    m_tcpSocket = conDial.socket();
     connect(m_tcpSocket, SIGNAL(readyRead()), SLOT(readServerResponse()));
     connect(m_tcpSocket, SIGNAL(disconnected()), SLOT(serverDisconected()));
+    setWindowTitle(tr("Client - %1").arg(conDial.username()));
     QWidget::show();
 
 }
