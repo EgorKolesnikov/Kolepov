@@ -128,19 +128,26 @@ void EchoClient::enableSendButton()
 
 void EchoClient::show()
 {
-    ConnectDialog conDial(this);
-    if (conDial.exec() != QDialog::Accepted)
-    {
-        close();
-        return;
+    ConnectDialog *dialog = new ConnectDialog(this);
+    connect(dialog, SIGNAL(finished(int)), this, SLOT(dialogResult(int)),
+            Qt::QueuedConnection);
+    dialog->exec();
+    dialog->deleteLater();
+}
+
+void EchoClient::dialogResult(int code){
+    ConnectDialog *dialog = (ConnectDialog*)QObject::sender();
+
+    if(dialog->result() == QDialog::Accepted){
+        m_tcpSocket = dialog->socket();
+        connect(m_tcpSocket, SIGNAL(readyRead()), SLOT(readServerResponse()));
+        connect(m_tcpSocket, SIGNAL(disconnected()), SLOT(serverDisconected()));
+        setWindowTitle(tr("Client - %1").arg(dialog->username()));
+        QWidget::show();
     }
-
-    m_tcpSocket = conDial.socket();
-    connect(m_tcpSocket, SIGNAL(readyRead()), SLOT(readServerResponse()));
-    connect(m_tcpSocket, SIGNAL(disconnected()), SLOT(serverDisconected()));
-    setWindowTitle(tr("Client - %1").arg(conDial.username()));
-    QWidget::show();
-
+    else{
+        QApplication::quit();
+    }
 }
 
 EchoClient::~EchoClient()

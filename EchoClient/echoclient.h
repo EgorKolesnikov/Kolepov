@@ -16,6 +16,7 @@ public:
     ~EchoClient();
 
 public slots:
+    void dialogResult(int code);
     void enableSendButton();
     void sendMessage();
     void show();
