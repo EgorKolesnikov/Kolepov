@@ -12,6 +12,8 @@ struct PROTOCOL{
     static const QChar LOGIN_OK;
     static const QChar LOGIN_DENIED;
     static const QChar SEND_INIT_MESSAGES;
+    static const QChar USER_MODERATOR_LIST;
+    static const QChar INIT_MODERATOR;
 };
 
 

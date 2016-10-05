@@ -99,6 +99,12 @@ QSqlQuery SqlWrapper::get_all_messages()
     return query;
 }
 
+QSqlQuery SqlWrapper::get_all_users()
+{
+    QMutexLocker locker(&mutex_);
+    return QSqlQuery("SELECT name, role FROM users;");
+}
+
 bool SqlWrapper::add_message(int user_id, const QString &message_text){
     QMutexLocker locker(&mutex_);
     //Sleeper::msleep(wait);
@@ -135,9 +141,9 @@ bool SqlWrapper::modify_message(int message_id, const QString &new_message_text)
     return query.exec();
 }
 
-bool SqlWrapper::change_user_role(const QString &user_name, QChar new_role){
+bool SqlWrapper::change_user_role(const QString &user_name, QString new_role){
     QMutexLocker locker(&mutex_);
-    Sleeper::msleep(wait);
+    //Sleeper::msleep(wait);
 
     QSqlQuery query;
     query.prepare("UPDATE users SET role=:n_role WHERE name=:u_name;");

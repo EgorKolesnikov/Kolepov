@@ -7,7 +7,8 @@
 int main(int argc, char *argv[])
 {
     QApplication app(argc, argv);
-    QGuiApplication::setApplicationDisplayName(EchoServer::tr("Fortune Server"));
+    QGuiApplication::setApplicationDisplayName(
+                EchoServer::tr("Server"));
 
     EchoServer server;
     server.show();

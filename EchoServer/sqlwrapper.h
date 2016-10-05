@@ -43,11 +43,12 @@ public:
     QSqlQuery get_message(int message_id);
     int get_message_id(int user_id, const QString& message);
     QSqlQuery get_all_messages();
+    QSqlQuery get_all_users();
 
     bool add_message(int user_id, const QString& message_text);
     bool delete_message(int message_id);
     bool modify_message(int message_id, const QString& new_message_text);
-    bool change_user_role(const QString& user_name, QChar new_role);
+    bool change_user_role(const QString& user_name, QString new_role);
 };
 
 #endif // SQLWRAPPER_H

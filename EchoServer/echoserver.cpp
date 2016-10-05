@@ -67,7 +67,8 @@ void EchoServer::sessionOpened(QLabel *statusLabel)
     // if we did not find one, use IPv4 localhost
     if (ipAddress.isEmpty())
         ipAddress = QHostAddress(QHostAddress::LocalHost).toString();
-    statusLabel->setText(tr("The server is running on\n\nIP: %1\nport: %2\n\n")
+    statusLabel->setText(tr("The server is running on\n\nIP: %1\nport: %2\n\n"
+                            "Connection log:")
                          .arg(ipAddress).arg(tcpServer->serverPort()));
 }
 
@@ -100,8 +101,8 @@ void EchoServer::new_user()
     connect(thread, SIGNAL(modifyMessage(QString,int,QString)),
             SLOT(modifyMessage(QString,int,QString))
             );
-    connect(thread, SIGNAL(changeUserRole(QString,QString,QChar)),
-            SLOT(changeUserRole(QString,QString,QChar))
+    connect(thread, SIGNAL(changeUserRole(QString,QString,QString)),
+            SLOT(changeUserRole(QString,QString,QString))
             );
 
     thread->start();
@@ -110,13 +111,19 @@ void EchoServer::new_user()
 void EchoServer::addNewUserToMap(QString name, QTcpSocket* tcpSocket)
 {
     m_userSocket[name] = tcpSocket;
-    connections->append(name);
+    connections->append(tr("%1 | %2 connected")
+                        .arg(QTime::currentTime().toString())
+                        .arg(name)
+                        );
 }
 
 void EchoServer::removeUserFromMap(QString name)
 {
     m_userSocket.remove(name);
-    qDebug() << name << " removed";
+    connections->append(tr("%1 | %2 disconnected")
+                        .arg(QTime::currentTime().toString())
+                        .arg(name)
+                        );
 }
 
 void EchoServer::sendMessage(const QString& name, int user_id, const QString& message)
@@ -131,15 +138,13 @@ void EchoServer::sendMessage(const QString& name, int user_id, const QString& me
         return;
     }
 
-    int added_message = database->get_message_id(user_id, message);
+    int added_message_id = database->get_message_id(user_id, message);
 
     out << PROTOCOL::ADD_MESSAGE
-        << added_message
+        << added_message_id
         << name
         << message;
 
-    qDebug() << "Server: " << name << " sent message.";
-    qDebug() << added_message;
     for (auto it = m_userSocket.cbegin();
          it != m_userSocket.cend(); ++it)
     {
@@ -162,7 +167,6 @@ void EchoServer::deleteMessage(const QString &name, int message_id){
     out << PROTOCOL::DELETE_MESSAGE
         << message_id;
 
-    qDebug() << "Server: " << name << " deleted message.";
     for (auto it = m_userSocket.cbegin();
          it != m_userSocket.cend(); ++it)
     {
@@ -187,7 +191,6 @@ void EchoServer::modifyMessage(const QString &name, int message_id, const QStrin
         << message_id
         << new_message_text;
 
-    qDebug() << "Server: " << name << " modified message.";
     for (auto it = m_userSocket.cbegin();
          it != m_userSocket.cend(); ++it)
     {
@@ -196,27 +199,28 @@ void EchoServer::modifyMessage(const QString &name, int message_id, const QStrin
     }
 }
 
-void EchoServer::changeUserRole(const QString &who_changing, const QString &change_him, QChar new_role){
+void EchoServer::changeUserRole(const QString &who_changing, const QString &change_him, QString new_role){
+
+    if (!database->change_user_role(change_him, new_role))
+    {
+        qDebug() << "Server: couldn't change role " << change_him;
+        return;
+    }
+
     QByteArray block;
     QDataStream out(&block, QIODevice::WriteOnly);
     out.setVersion(QDataStream::Qt_4_0);
 
-    bool success = database->change_user_role(change_him, new_role);
-
-    if(new_role == 'm'){
-        out << PROTOCOL::SET_NEW_MODERATOR
-            << change_him;
+    if(new_role == "m"){
+        out << PROTOCOL::SET_NEW_MODERATOR;
     }
     else{
-        out << PROTOCOL::DELETE_MODERATOR
-            << change_him;
+        out << PROTOCOL::DELETE_MODERATOR;
     }
 
-    qDebug() << "Server: " << who_changing << " changed user role.";
-    for (auto it = m_userSocket.cbegin();
-         it != m_userSocket.cend(); ++it)
+    if (m_userSocket.contains(change_him))
     {
-        it.value()->write(block);
-        it.value()->flush();
+        m_userSocket[change_him]->write(block);
+        m_userSocket[change_him]->flush();
     }
 }

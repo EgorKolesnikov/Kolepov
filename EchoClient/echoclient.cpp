@@ -11,6 +11,7 @@ EchoClient::EchoClient(QWidget *parent)
     , m_sendButton(new QPushButton(tr("Send")))
     , m_userList(new QListWidget)
     , m_moderatorList(new QListWidget)
+    , m_adminWidget(new QWidget)
 {
 
     m_sendButton->setDefault(true);
@@ -18,7 +19,7 @@ EchoClient::EchoClient(QWidget *parent)
 
     //constructing user tab
     QWidget *userWidget = new QWidget;
-    QGridLayout *userLayout = new QGridLayout;
+    QVBoxLayout *userLayout = new QVBoxLayout;
 
     m_messages->setColumnCount(3);
     m_messages->setRowCount(0);
@@ -26,22 +27,40 @@ EchoClient::EchoClient(QWidget *parent)
                 {tr("User"), tr("_Message ID"), tr("Message")}
                 );
     m_messages->verticalHeader()->setVisible(false);
-    //m_messages->hideColumn(1);
+    m_messages->hideColumn(1);
     m_messages->setSelectionBehavior(QAbstractItemView::SelectRows);
     m_messages->setSelectionMode(QAbstractItemView::SingleSelection);
     m_messages->horizontalHeader()->setStretchLastSection(true);
 
-    userLayout->addWidget(m_messages, 0, 0, 4, 4);
-    userLayout->addWidget(m_modifyButton, 0, 4);
-    userLayout->addWidget(m_deleteButton, 1, 4);
-    userLayout->addWidget(m_inputMessageEdit, 4, 0, 1, 4);
-    userLayout->addWidget(m_sendButton, 4, 4);
+    QVBoxLayout *btns = new QVBoxLayout;
+    btns->addWidget(m_modifyButton);
+    btns->addWidget(m_deleteButton);
+    btns->addStretch();
+
+    QHBoxLayout *firstRow = new QHBoxLayout;
+    firstRow->addWidget(m_messages, 1);
+    firstRow->addLayout(btns);
+
+    QHBoxLayout *secondRow = new QHBoxLayout;
+    secondRow->addWidget(m_inputMessageEdit, 1);
+    secondRow->addWidget(m_sendButton);
+
+    userLayout->addLayout(firstRow, 1);
+    userLayout->addLayout(secondRow);
+
+//    userLayout->addWidget(m_messages, 0, 0, 4, 4);
+//    userLayout->addWidget(m_modifyButton, 0, 4);
+//    userLayout->addWidget(m_deleteButton, 1, 4);
+//    userLayout->addWidget(m_inputMessageEdit, 4, 0, 1, 4);
+//    userLayout->addWidget(m_sendButton, 4, 4);
+
+    m_deleteButton->setVisible(false);
+    m_modifyButton->setVisible(false);
 
     userWidget->setLayout(userLayout);
     //
 
     //construct admin tab
-    QWidget *adminWidget = new QWidget;
     QHBoxLayout *moderatorLayout = new QHBoxLayout;
 
     const QStyle *style = QApplication::style();
@@ -69,16 +88,17 @@ EchoClient::EchoClient(QWidget *parent)
     moderatorLayout->addLayout(buttonsLayout);
     moderatorLayout->addLayout(usersL, 1);
 
-    adminWidget->setLayout(moderatorLayout);
+    m_adminWidget->setLayout(moderatorLayout);
     //
 
     m_tabWidget->addTab(userWidget, tr("Messages"));
-    m_tabWidget->addTab(adminWidget, tr("Moderators"));
 
     QHBoxLayout *mainLayout = new QHBoxLayout;
     mainLayout->addWidget(m_tabWidget);
 
     this->setLayout(mainLayout);
+
+    resize(776, 480);
 
 
     connect(m_sendButton, SIGNAL(clicked(bool)),
@@ -92,6 +112,12 @@ EchoClient::EchoClient(QWidget *parent)
             );
     connect(m_modifyButton, SIGNAL(clicked(bool)),
             SLOT(modifyRequest())
+            );
+    connect(toModButton, SIGNAL(clicked(bool)),
+            SLOT(addModeratorRequest())
+            );
+    connect(toUserButton, SIGNAL(clicked(bool)),
+            SLOT(deleteModeratorRequest())
             );
 }
 
@@ -123,12 +149,12 @@ EchoClient::~EchoClient()
 
 void EchoClient::sendMessage()
 {
-    qDebug() << "Client: send new message";
     QByteArray block;
     QDataStream out(&block, QIODevice::WriteOnly);
     out.setVersion(QDataStream::Qt_4_0);
 
     out << PROTOCOL::ADD_MESSAGE << m_inputMessageEdit->text();
+
     m_tcpSocket->write(block);
     m_tcpSocket->flush();
 }
@@ -185,6 +211,40 @@ void EchoClient::readServerResponse()
         in >> messageId >> newText;
         modifyResponse(messageId, newText);
     }
+    else if (ind == PROTOCOL::USER_MODERATOR_LIST)
+    {
+        qint32 numOfMembers;
+        QString role;
+        QString name;
+        in >> numOfMembers;
+        for (int i = 0; i < numOfMembers; ++i)
+        {
+            in >> name >> role;
+            if (role == "m")
+                m_moderatorList->addItem(name);
+            else if (role == "u")
+                m_userList->addItem(name);
+        }
+
+        enableAdminMode();
+    }
+    else if (ind == PROTOCOL::SET_NEW_MODERATOR)
+    {
+        enableModeratorMode();
+        QMessageBox::information(this, tr("Moderation"),
+                                 tr("Now you are a moderator"));
+    }
+    else if (ind == PROTOCOL::DELETE_MODERATOR)
+    {
+        disableModeratorMode();
+        QMessageBox::information(this, tr("Moderation"),
+                                 tr("Now you are not a moderator"));
+    }
+    else if (ind == PROTOCOL::INIT_MODERATOR)
+    {
+        enableModeratorMode();
+    }
+
 
 }
 
@@ -280,3 +340,63 @@ void EchoClient::modifyResponse(int messageId, QString text)
             setText(text);
 
 }
+
+//for admin only
+void EchoClient::addModeratorRequest()
+{
+    if (m_userList->currentItem() == Q_NULLPTR)
+        return;
+
+    QByteArray block;
+    QDataStream out(&block, QIODevice::WriteOnly);
+    out.setVersion(QDataStream::Qt_4_0);
+
+    out << PROTOCOL::SET_NEW_MODERATOR
+        << m_userList->currentItem()->text();
+
+    m_tcpSocket->write(block);
+    m_tcpSocket->flush();
+
+    m_moderatorList->addItem(m_userList->currentItem()->text());
+    m_userList->takeItem(m_userList->currentRow());
+
+}
+
+void EchoClient::deleteModeratorRequest()
+{
+    if (m_moderatorList->currentItem() == Q_NULLPTR)
+        return;
+
+    QByteArray block;
+    QDataStream out(&block, QIODevice::WriteOnly);
+    out.setVersion(QDataStream::Qt_4_0);
+
+    out << PROTOCOL::DELETE_MODERATOR
+        << m_moderatorList->currentItem()->text();
+
+    m_tcpSocket->write(block);
+    m_tcpSocket->flush();
+
+    m_userList->addItem(m_moderatorList->currentItem()->text());
+    m_moderatorList->takeItem(m_moderatorList->currentRow());
+}
+
+void EchoClient::enableAdminMode()
+{
+    enableModeratorMode();
+    m_tabWidget->addTab(m_adminWidget, tr("Moderators"));
+}
+
+void EchoClient::enableModeratorMode()
+{
+    m_deleteButton->setVisible(true);
+    m_modifyButton->setVisible(true);
+}
+
+void EchoClient::disableModeratorMode()
+{
+    m_deleteButton->setVisible(false);
+    m_modifyButton->setVisible(false);
+}
+
+

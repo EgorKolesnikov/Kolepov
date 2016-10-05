@@ -182,17 +182,18 @@ void ConnectDialog::showResult()
     QDataStream in(tcpSocket);
     in.setVersion(QDataStream::Qt_4_0);
 
-//    in.startTransaction();
-//    if (!in.commitTransaction())
-//        return;
+    in.startTransaction();
+    if (!in.commitTransaction())
+        return;
 
-    in >> ind >> answer;
+    in >> ind;
     if (ind == PROTOCOL::LOGIN_OK)
     {
         this->accept();
     }
     else
     {
+        in >> answer;
         QMessageBox::information(this, "Server Response", answer);
     }
 

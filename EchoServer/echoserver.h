@@ -28,7 +28,7 @@ private slots:
     void sendMessage(const QString& name, int user_id, const QString& message);
     void deleteMessage(const QString& name, int message_id);
     void modifyMessage(const QString& name, int message_id, const QString& new_message_text);
-    void changeUserRole(const QString& who_changing, const QString& change_him, QChar new_role);
+    void changeUserRole(const QString& who_changing, const QString& change_him, QString new_role);
 
 private:
     const qint16 PORT = 55555;

@@ -12,7 +12,6 @@ ServerThread::ServerThread(int socketDescriptor, SqlWrapper *db,  QObject *paren
 
 void ServerThread::run()
 {
-    qDebug() << "!!!" << database;
     QTcpSocket tcpSocket;
     if (!tcpSocket.setSocketDescriptor(m_socketDescriptor)) {
         qDebug() << "Error creating QTcpSocket in thread.\n";
@@ -38,10 +37,10 @@ void ServerThread::run()
             << tr("Error. Maybe you should change path to database.");
     }
     else if(user_id == 0){
-        out << PROTOCOL::LOGIN_DENIED << tr("Nope!");
+        out << PROTOCOL::LOGIN_DENIED << tr("Access denied.");
     }
     else{
-        out << PROTOCOL::LOGIN_OK << tr("Ok!");
+        out << PROTOCOL::LOGIN_OK;
         authPassed = true;
     }
 
@@ -61,6 +60,7 @@ void ServerThread::run()
     connect(&tcpSocket, SIGNAL(disconnected()),
             SLOT(disconnectedUser()));
 
+
     //Sending all messages from database
     QSqlQuery qwe = database->get_all_messages();
     if (qwe.isActive()) {
@@ -79,6 +79,45 @@ void ServerThread::run()
         out.device()->seek(sizeof(PROTOCOL::SEND_INIT_MESSAGES));
         out << numOfInitMessages;
         tcpSocket.write(block);
+        tcpSocket.flush();
+    }
+
+    //If user is an admin - send him list of users
+    QChar role = authorize(user);
+    if (role == 'a')
+    {
+        QThread::msleep(1000);
+        block.clear();
+        QDataStream out(&block, QIODevice::WriteOnly);
+        out.setVersion(QDataStream::Qt_4_0);
+
+        out << PROTOCOL::USER_MODERATOR_LIST
+            << qint32(0);
+
+        qint32 membersCount = 0;
+        QSqlQuery query = database->get_all_users();
+        while (query.next())
+        {
+            ++membersCount;
+            out << query.value("name").toString()
+                << query.value("role").toString();
+        }
+        out.device()->seek(sizeof(PROTOCOL::USER_MODERATOR_LIST));
+        out << membersCount;
+
+        tcpSocket.write(block);
+        tcpSocket.flush();
+    }
+    else if (role == 'm')
+    {
+        QThread::msleep(1000);
+        block.clear();
+        QDataStream out(&block, QIODevice::WriteOnly);
+        out.setVersion(QDataStream::Qt_4_0);
+
+        out << PROTOCOL::INIT_MODERATOR;
+        tcpSocket.write(block);
+        tcpSocket.flush();
     }
 
     //Main cycle
@@ -100,13 +139,10 @@ void ServerThread::run()
 }
 
 int ServerThread::authenticate(const QString &user_name){
-    qDebug() << user_name;
     QSqlQuery query = database->get_user(user_name);
-    qDebug() << query.isActive();
     if (query.isActive()) {
         query.next();
         if(query.value(1).toString().compare(user_name) == 0){
-            qDebug() << "ServerThread: user id " << query.value(0).toInt();
             return query.value(0).toInt();
         }
         else{
@@ -118,6 +154,20 @@ int ServerThread::authenticate(const QString &user_name){
     }
 }
 
+QChar ServerThread::authorize(const QString &user_name)
+{
+    QSqlQuery query = database->get_user(user_name);
+    if (query.isActive())
+    {
+        query.next();
+        return query.value("role").toString()[0];
+    }
+    else
+    {
+        return 'e'; //error
+    }
+}
+
 void ServerThread::manageUserQuery(QDataStream &in, const QString& user_name, int user_id){
     QString request;
     QChar ind;
@@ -126,26 +176,47 @@ void ServerThread::manageUserQuery(QDataStream &in, const QString& user_name, in
 
     if(ind == PROTOCOL::ADD_MESSAGE){
         in >> request;
-        qDebug() << "ServerThread: got new message";
+        qDebug() << user_name << request;
         emit addMessage(user_name, user_id, request);
+
     } else if (ind == PROTOCOL::DELETE_MESSAGE){
+        QChar role = authorize(user_name);
+        if (role != 'a' && role != 'm')
+        {
+            return;
+        }
         int message_id;
         in >> message_id;
-        qDebug() << "ServerThread: delete message request.";
         emit deleteMessage(user_name, message_id);
+
     } else if (ind == PROTOCOL::MODIFY_MESSAGE){
+        QChar role = authorize(user_name);
+        if (role != 'a' && role != 'm')
+        {
+            return;
+        }
         int message_id;
         in >> message_id >> request;
-        qDebug() << "ServerThread: change message request.";
         emit modifyMessage(user_name, message_id, request);
+
     } else if (ind == PROTOCOL::SET_NEW_MODERATOR){
+        QChar role = authorize(user_name);
+        if (role != 'a')
+        {
+            return;
+        }
         in >> request;
-        qDebug() << "ServerThread: set new moderator.";
-        emit changeUserRole(user_name, request, QChar('u'));
+        emit changeUserRole(user_name, request, QString("m"));
+
     } else if (ind == PROTOCOL::DELETE_MODERATOR){
+        QChar role = authorize(user_name);
+        if (role != 'a')
+        {
+            return;
+        }
         in >> request;
-        qDebug() << "ServerThread: delete moderator.";
-        emit changeUserRole(user_name, request, QChar('m'));
+        emit changeUserRole(user_name, request, QString("u"));
+
     }
 }
 

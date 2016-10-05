@@ -23,11 +23,17 @@ public slots:
     void serverDisconected();
     void deleteMessageRequest();
     void modifyRequest();
+    //for admin only
+    void addModeratorRequest();
+    void deleteModeratorRequest();
 
 private:
     void addMessage(int messageId, const QString& user, const QString& text);
     void deleteMessageResponse(int messageId);
     void modifyResponse(int messageId, QString text);
+    void enableAdminMode();
+    void enableModeratorMode();
+    void disableModeratorMode();
 
 private:
     QTabWidget *m_tabWidget;
@@ -42,6 +48,8 @@ private:
 
     QListWidget *m_userList;
     QListWidget *m_moderatorList;
+
+    QWidget* m_adminWidget;
 
     QTcpSocket *m_tcpSocket;
 };
