@@ -8,21 +8,25 @@ EchoClient::EchoClient(QWidget *parent)
     , m_inputMessageEdit(new QLineEdit)
     , m_modifyButton(new QPushButton(tr("Modify")))
     , m_deleteButton(new QPushButton(tr("Delete")))
+    , m_sendButton(new QPushButton(tr("Send")))
     , m_userList(new QListWidget)
     , m_moderatorList(new QListWidget)
 {
-    QPushButton *sendButton = new QPushButton(tr("Send"));
+
+    m_sendButton->setDefault(true);
+    m_sendButton->setEnabled(false);
 
     //constructing user tab
     QWidget *userWidget = new QWidget;
     QGridLayout *userLayout = new QGridLayout;
 
     m_messages->setColumnCount(3);
+    m_messages->setRowCount(0);
     m_messages->setHorizontalHeaderLabels(
                 {tr("User"), tr("_Message ID"), tr("Message")}
                 );
     m_messages->verticalHeader()->setVisible(false);
-    m_messages->hideColumn(1);
+    //m_messages->hideColumn(1);
     m_messages->setSelectionBehavior(QAbstractItemView::SelectRows);
     m_messages->setSelectionMode(QAbstractItemView::SingleSelection);
     m_messages->horizontalHeader()->setStretchLastSection(true);
@@ -31,7 +35,7 @@ EchoClient::EchoClient(QWidget *parent)
     userLayout->addWidget(m_modifyButton, 0, 4);
     userLayout->addWidget(m_deleteButton, 1, 4);
     userLayout->addWidget(m_inputMessageEdit, 4, 0, 1, 4);
-    userLayout->addWidget(sendButton, 4, 4);
+    userLayout->addWidget(m_sendButton, 4, 4);
 
     userWidget->setLayout(userLayout);
     //
@@ -77,7 +81,20 @@ EchoClient::EchoClient(QWidget *parent)
     this->setLayout(mainLayout);
 
 
-    connect(sendButton, SIGNAL(clicked(bool)), SLOT(sendMessage()));
+    connect(m_sendButton, SIGNAL(clicked(bool)),
+            SLOT(sendMessage())
+            );
+    connect(m_inputMessageEdit, SIGNAL(textChanged(QString)),
+            SLOT(enableSendButton())
+            );
+    connect(m_deleteButton, SIGNAL(clicked(bool)),
+            SLOT(deleteMessageRequest())
+            );
+}
+
+void EchoClient::enableSendButton()
+{
+    m_sendButton->setEnabled(!m_inputMessageEdit->text().isEmpty());
 }
 
 void EchoClient::show()
@@ -140,15 +157,33 @@ void EchoClient::readServerResponse()
         in >> messageId >> name >> text;
         addMessage(messageId, name, text);
     }
+    else if(ind == PROTOCOL::SEND_INIT_MESSAGES)
+    {
+        QString text, name;
+        int messageId;
+        qint32 numOfMessages;
+        in >> numOfMessages;
+        for(int i = 0; i < numOfMessages; ++i)
+        {
+            in >> messageId >> name >> text;
+            addMessage(messageId, name, text);
+        }
+    }
+    else if (ind == PROTOCOL::DELETE_MESSAGE)
+    {
+        int messageId;
+        in >> messageId;
+        deleteMessageResponse(messageId);
+    }
 
 }
 
 void EchoClient::addMessage(int messageId,
                             const QString& user, const QString& text)
 {
-    qDebug() << "Client: get new message";
     int rowNum = m_messages->rowCount();
     m_messages->insertRow(rowNum);
+    m_messageIdRowNum[messageId] = rowNum;
 
     QTableWidgetItem* items[3];
     items[0] = new QTableWidgetItem(user);
@@ -160,5 +195,36 @@ void EchoClient::addMessage(int messageId,
         items[i]->setFlags(items[i]->flags() & (~Qt::ItemIsEditable));
         m_messages->setItem(rowNum, i, items[i]);
     }
+}
+
+void EchoClient::deleteMessageRequest()
+{
+    QItemSelectionModel *select = m_messages->selectionModel();
+    if (!select->hasSelection())
+        return;
+
+    QModelIndex index = select->selectedRows(1)[0]; //column _Message_id
+
+    QByteArray block;
+    QDataStream out(&block, QIODevice::WriteOnly);
+    out.setVersion(QDataStream::Qt_4_0);
+
+    out << PROTOCOL::DELETE_MESSAGE << index.data().toInt();
+    m_tcpSocket->write(block);
+    m_tcpSocket->flush();
+}
+
+void EchoClient::deleteMessageResponse(int messageId)
+{
+    int deleteRowNum = m_messageIdRowNum[messageId];
+    m_messages->removeRow(deleteRowNum);
+    m_messageIdRowNum.remove(messageId);
+    for (auto it = m_messageIdRowNum.begin();
+         it != m_messageIdRowNum.end(); ++it)
+    {
+        if (it.value() > deleteRowNum)
+            --it.value();
+    }
+
 }
 

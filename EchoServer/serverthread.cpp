@@ -64,19 +64,21 @@ void ServerThread::run()
     //Sending all messages from database
     QSqlQuery qwe = database->get_all_messages();
     if (qwe.isActive()) {
+        qint32 numOfInitMessages = 0;
+        block.clear();
+        QDataStream out(&block, QIODevice::WriteOnly);
+        out.setVersion(QDataStream::Qt_4_0);
+        out << PROTOCOL::SEND_INIT_MESSAGES
+            << numOfInitMessages;
         while(qwe.next()) {
-            QDataStream out(&block, QIODevice::WriteOnly);
-            out.setVersion(QDataStream::Qt_4_0);
-            block.clear();
-            out << PROTOCOL::ADD_MESSAGE
-                << qwe.value("message_id").toInt()
+            ++numOfInitMessages;
+            out << qwe.value("message_id").toInt()
                 << qwe.value("name").toString()
-                << qwe.value("text").toString();
-
-            tcpSocket.write(block);
-            tcpSocket.flush();
-            tcpSocket.waitForBytesWritten();
+                << qwe.value("text").toString();           
         }
+        out.device()->seek(sizeof(PROTOCOL::SEND_INIT_MESSAGES));
+        out << numOfInitMessages;
+        tcpSocket.write(block);
     }
 
     //Main cycle

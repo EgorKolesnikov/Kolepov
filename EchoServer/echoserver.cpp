@@ -131,16 +131,15 @@ void EchoServer::sendMessage(const QString& name, int user_id, const QString& me
         return;
     }
 
-    QSqlQuery added_message = database->get_message_id(message);
-    added_message.next();
+    int added_message = database->get_message_id(user_id, message);
 
     out << PROTOCOL::ADD_MESSAGE
-        << added_message.value(0).toInt()
+        << added_message
         << name
         << message;
 
     qDebug() << "Server: " << name << " sent message.";
-    qDebug() << added_message.value(0).toInt();
+    qDebug() << added_message;
     for (auto it = m_userSocket.cbegin();
          it != m_userSocket.cend(); ++it)
     {
@@ -150,11 +149,15 @@ void EchoServer::sendMessage(const QString& name, int user_id, const QString& me
 }
 
 void EchoServer::deleteMessage(const QString &name, int message_id){
+    if (!database->delete_message(message_id))
+    {
+        qDebug() << "Server: couldn't delete message " << message_id;
+        return;
+    }
+
     QByteArray block;
     QDataStream out(&block, QIODevice::WriteOnly);
     out.setVersion(QDataStream::Qt_4_0);
-
-    bool success = database->delete_message(message_id);
 
     out << PROTOCOL::DELETE_MESSAGE
         << message_id;

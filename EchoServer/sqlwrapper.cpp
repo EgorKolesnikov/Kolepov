@@ -14,7 +14,7 @@ class Sleeper: public QThread
 
 
 //QString SqlWrapper::path_to_database = "/home/kolegor/Kolepov/EchoServer/";
-QString SqlWrapper::path_to_database = "C:\\Users\\1\\Desktop\\projects\\Kolepov\\EchoServer";
+QString SqlWrapper::path_to_database = "C:\\Users\\1\\Desktop\\projects\\Kolepov\\EchoServer\\";
 QString SqlWrapper::base_filename = "server_database.sqlite";
 
 
@@ -72,16 +72,19 @@ QSqlQuery SqlWrapper::get_message(int message_id){
     return query;
 }
 
-QSqlQuery SqlWrapper::get_message_id(const QString& message){
+int SqlWrapper::get_message_id(int user_id, const QString& message){
     QMutexLocker locker(&mutex_);
    // Sleeper::msleep(wait);
 
     QSqlQuery query;
-    query.prepare("SELECT * FROM messages WHERE text=:m_txt;");
+    query.prepare("SELECT MAX(message_id) AS m_id "
+                  "FROM messages "
+                  "WHERE text=:m_txt AND user_id=:u_id;");
     query.bindValue(":m_txt", message);
+    query.bindValue(":u_id", user_id);
     query.exec();
-
-    return query;
+    query.next();
+    return query.value("m_id").toInt();
 }
 
 QSqlQuery SqlWrapper::get_all_messages()

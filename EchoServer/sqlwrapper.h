@@ -41,7 +41,7 @@ public:
     // Possible queries
     QSqlQuery get_user(const QString& user_name);
     QSqlQuery get_message(int message_id);
-    QSqlQuery get_message_id(const QString& message);
+    int get_message_id(int user_id, const QString& message);
     QSqlQuery get_all_messages();
 
     bool add_message(int user_id, const QString& message_text);
