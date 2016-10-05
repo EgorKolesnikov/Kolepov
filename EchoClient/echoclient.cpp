@@ -90,6 +90,9 @@ EchoClient::EchoClient(QWidget *parent)
     connect(m_deleteButton, SIGNAL(clicked(bool)),
             SLOT(deleteMessageRequest())
             );
+    connect(m_modifyButton, SIGNAL(clicked(bool)),
+            SLOT(modifyRequest())
+            );
 }
 
 void EchoClient::enableSendButton()
@@ -175,6 +178,13 @@ void EchoClient::readServerResponse()
         in >> messageId;
         deleteMessageResponse(messageId);
     }
+    else if (ind == PROTOCOL::MODIFY_MESSAGE)
+    {
+        int messageId;
+        QString newText;
+        in >> messageId >> newText;
+        modifyResponse(messageId, newText);
+    }
 
 }
 
@@ -199,17 +209,18 @@ void EchoClient::addMessage(int messageId,
 
 void EchoClient::deleteMessageRequest()
 {
-    QItemSelectionModel *select = m_messages->selectionModel();
-    if (!select->hasSelection())
+    int curRow = m_messages->currentRow();
+    if (curRow == -1)
         return;
 
-    QModelIndex index = select->selectedRows(1)[0]; //column _Message_id
+    int messageId = m_messages->
+            item(curRow, 1)->data(QVariant::Int).toInt();
 
     QByteArray block;
     QDataStream out(&block, QIODevice::WriteOnly);
     out.setVersion(QDataStream::Qt_4_0);
 
-    out << PROTOCOL::DELETE_MESSAGE << index.data().toInt();
+    out << PROTOCOL::DELETE_MESSAGE << messageId;
     m_tcpSocket->write(block);
     m_tcpSocket->flush();
 }
@@ -225,6 +236,47 @@ void EchoClient::deleteMessageResponse(int messageId)
         if (it.value() > deleteRowNum)
             --it.value();
     }
-
 }
 
+void EchoClient::modifyRequest()
+{
+    int curRow = m_messages->currentRow();
+    if (curRow == -1)
+        return;
+
+    int messageId = m_messages->
+            item(curRow, 1)->data(QVariant::Int).toInt();
+    const QString& text = m_messages->
+            item(curRow, 2)->text();
+
+    bool ok;
+    QString newText = QInputDialog::getText(this,
+                                            tr("Modify"),
+                                            tr("New text:"),
+                                            QLineEdit::Normal,
+                                            text,
+                                            &ok);
+    if (ok && !newText.isEmpty() && newText != text)
+    {
+        QByteArray block;
+        QDataStream out(&block, QIODevice::WriteOnly);
+        out.setVersion(QDataStream::Qt_4_0);
+
+        out << PROTOCOL::MODIFY_MESSAGE
+            << messageId
+            << newText;
+
+        m_tcpSocket->write(block);
+        m_tcpSocket->flush();
+    }
+}
+
+void EchoClient::modifyResponse(int messageId, QString text)
+{
+    if (!m_messageIdRowNum.contains(messageId))
+        return;
+
+    m_messages->item(m_messageIdRowNum[messageId], 2)->
+            setText(text);
+
+}

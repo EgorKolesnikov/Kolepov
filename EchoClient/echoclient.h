@@ -22,10 +22,12 @@ public slots:
     void readServerResponse();
     void serverDisconected();
     void deleteMessageRequest();
+    void modifyRequest();
 
 private:
     void addMessage(int messageId, const QString& user, const QString& text);
     void deleteMessageResponse(int messageId);
+    void modifyResponse(int messageId, QString text);
 
 private:
     QTabWidget *m_tabWidget;

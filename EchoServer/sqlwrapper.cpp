@@ -129,7 +129,7 @@ bool SqlWrapper::modify_message(int message_id, const QString &new_message_text)
 
     QSqlQuery query;
     query.prepare("UPDATE messages SET text=:new_m_text WHERE message_id=:m_id;");
-    query.bindValue(":new_n_text", new_message_text);
+    query.bindValue(":new_m_text", new_message_text);
     query.bindValue(":m_id", message_id);
 
     return query.exec();

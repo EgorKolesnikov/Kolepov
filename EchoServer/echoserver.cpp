@@ -172,11 +172,16 @@ void EchoServer::deleteMessage(const QString &name, int message_id){
 }
 
 void EchoServer::modifyMessage(const QString &name, int message_id, const QString &new_message_text){
+
+    if (!database->modify_message(message_id, new_message_text))
+    {
+        qDebug() << "Server: couldn't modify message " << message_id;
+        return;
+    }
+
     QByteArray block;
     QDataStream out(&block, QIODevice::WriteOnly);
     out.setVersion(QDataStream::Qt_4_0);
-
-    bool success = database->modify_message(message_id, new_message_text);
 
     out << PROTOCOL::MODIFY_MESSAGE
         << message_id
