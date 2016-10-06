@@ -239,14 +239,26 @@ void EchoClient::readServerResponse()
     else if (ind == PROTOCOL::SET_NEW_MODERATOR)
     {
         enableModeratorMode();
-        QMessageBox::information(this, tr("Moderation"),
-                                 tr("Now you are a moderator"));
+        QMessageBox* msgBox = new QMessageBox(this);
+        msgBox->setAttribute(Qt::WA_DeleteOnClose);
+        msgBox->setStandardButtons(QMessageBox::Ok);
+        msgBox->setWindowTitle(tr("Moderation"));
+        msgBox->setText(tr("Now you are a moderator"));
+        msgBox->setIcon(QMessageBox::Information);
+        msgBox->show();
     }
     else if (ind == PROTOCOL::DELETE_MODERATOR)
     {
         disableModeratorMode();
-        QMessageBox::information(this, tr("Moderation"),
-                                 tr("Now you are not a moderator"));
+
+        QMessageBox* msgBox = new QMessageBox(this);
+        msgBox->setAttribute(Qt::WA_DeleteOnClose);
+        msgBox->setStandardButtons(QMessageBox::Ok);
+        msgBox->setWindowTitle(tr("Moderation"));
+        msgBox->setText(tr("Now you are not a moderator"));
+        msgBox->setIcon(QMessageBox::Information);
+        msgBox->show();
+
     }
     else if (ind == PROTOCOL::INIT_MODERATOR)
     {
