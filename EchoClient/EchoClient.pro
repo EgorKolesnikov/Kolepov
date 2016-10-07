@@ -21,3 +21,6 @@ SOURCES += main.cpp\
 HEADERS  += echoclient.h \
     connectdialog.h \
     protocol.h
+
+RESOURCES += \
+    resource.qrc

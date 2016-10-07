@@ -82,11 +82,12 @@ void ServerThread::run()
         tcpSocket.flush();
     }
 
+    tcpSocket.waitForReadyRead();
+    tcpSocket.readAll();    //take from socket PROTOCOL::INIT_MESSAGE_LIST
     //If user is an admin - send him list of users
     QChar role = authorize(user);
     if (role == 'a')
     {
-        QThread::msleep(1000);
         block.clear();
         QDataStream out(&block, QIODevice::WriteOnly);
         out.setVersion(QDataStream::Qt_4_0);
@@ -110,7 +111,6 @@ void ServerThread::run()
     }
     else if (role == 'm')
     {
-        QThread::msleep(1000);
         block.clear();
         QDataStream out(&block, QIODevice::WriteOnly);
         out.setVersion(QDataStream::Qt_4_0);

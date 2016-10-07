@@ -13,8 +13,6 @@ EchoClient::EchoClient(QWidget *parent)
     , m_moderatorList(new QListWidget)
     , m_adminWidget(new QWidget)
 {
-
-    m_sendButton->setDefault(true);
     m_sendButton->setEnabled(false);
 
     //constructing user tab
@@ -33,7 +31,13 @@ EchoClient::EchoClient(QWidget *parent)
     m_messages->horizontalHeader()->setStretchLastSection(true);
 
     QVBoxLayout *btns = new QVBoxLayout;
+    QPixmap modifyIcon(":/icons/modify.png");
+    m_modifyButton->setIcon(modifyIcon);
+    m_modifyButton->setIconSize(modifyIcon.size());
     btns->addWidget(m_modifyButton);
+
+    m_deleteButton->setIcon(QPixmap(":/icons/delete.png"));
+    m_deleteButton->setIconSize(modifyIcon.size());
     btns->addWidget(m_deleteButton);
     btns->addStretch();
 
@@ -43,6 +47,8 @@ EchoClient::EchoClient(QWidget *parent)
 
     QHBoxLayout *secondRow = new QHBoxLayout;
     secondRow->addWidget(m_inputMessageEdit, 1);
+    m_sendButton->setIcon(QPixmap(":/icons/send_message.png"));
+    m_sendButton->setIconSize(modifyIcon.size());
     secondRow->addWidget(m_sendButton);
 
     userLayout->addLayout(firstRow, 1);
@@ -63,12 +69,13 @@ EchoClient::EchoClient(QWidget *parent)
     //construct admin tab
     QHBoxLayout *moderatorLayout = new QHBoxLayout;
 
-    const QStyle *style = QApplication::style();
-
     QPushButton *toModButton = new QPushButton;
-    toModButton->setIcon(style->standardIcon(QStyle::SP_ArrowLeft));
+    QPixmap leftArrowIcon(":/icons/left_arrow.png");
+    toModButton->setIcon(leftArrowIcon);
+    toModButton->setIconSize(leftArrowIcon.size());
     QPushButton *toUserButton = new QPushButton;
-    toUserButton->setIcon(style->standardIcon(QStyle::SP_ArrowRight));
+    toUserButton->setIcon(QPixmap(":/icons/right_arrow.png"));
+    toUserButton->setIconSize(leftArrowIcon.size());
     QVBoxLayout *buttonsLayout = new QVBoxLayout;
 
     buttonsLayout->addStretch();
@@ -91,7 +98,8 @@ EchoClient::EchoClient(QWidget *parent)
     m_adminWidget->setLayout(moderatorLayout);
     //
 
-    m_tabWidget->addTab(userWidget, tr("Messages"));
+    m_tabWidget->addTab(userWidget,
+                        QPixmap(":/icons/message.png"), tr("Messages"));
 
     QHBoxLayout *mainLayout = new QHBoxLayout;
     mainLayout->addWidget(m_tabWidget);
@@ -99,9 +107,13 @@ EchoClient::EchoClient(QWidget *parent)
     this->setLayout(mainLayout);
 
     resize(776, 480);
+    m_inputMessageEdit->setFocus();
 
 
     connect(m_sendButton, SIGNAL(clicked(bool)),
+            SLOT(sendMessage())
+            );
+    connect(m_inputMessageEdit, SIGNAL(returnPressed()),
             SLOT(sendMessage())
             );
     connect(m_inputMessageEdit, SIGNAL(textChanged(QString)),
@@ -157,14 +169,19 @@ EchoClient::~EchoClient()
 
 void EchoClient::sendMessage()
 {
+    if (m_inputMessageEdit->text().isEmpty())
+        return;
     QByteArray block;
     QDataStream out(&block, QIODevice::WriteOnly);
     out.setVersion(QDataStream::Qt_4_0);
 
     out << PROTOCOL::ADD_MESSAGE << m_inputMessageEdit->text();
 
+    m_inputMessageEdit->clear();
+
     m_tcpSocket->write(block);
     m_tcpSocket->flush();
+
 }
 
 void EchoClient::serverDisconected()
@@ -205,6 +222,15 @@ void EchoClient::readServerResponse()
             in >> messageId >> name >> text;
             addMessage(messageId, name, text);
         }
+
+        QByteArray block;
+        QDataStream out(&block, QIODevice::WriteOnly);
+        out.setVersion(QDataStream::Qt_4_0);
+
+        out << PROTOCOL::GOT_MESSAGE_LIST;
+        m_tcpSocket->write(block);
+        m_tcpSocket->flush();
+
     }
     else if (ind == PROTOCOL::DELETE_MESSAGE)
     {
@@ -404,7 +430,8 @@ void EchoClient::deleteModeratorRequest()
 void EchoClient::enableAdminMode()
 {
     enableModeratorMode();
-    m_tabWidget->addTab(m_adminWidget, tr("Moderators"));
+    m_tabWidget->addTab(m_adminWidget,
+                        QPixmap(":/icons/moderator.png"), tr("Moderators"));
 }
 
 void EchoClient::enableModeratorMode()
