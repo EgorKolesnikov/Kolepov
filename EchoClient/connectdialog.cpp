@@ -8,6 +8,8 @@ ConnectDialog::ConnectDialog(QWidget *parent)
     , hostCombo(new QComboBox)
     , portLineEdit(new QLineEdit)
     , loginLineEdit(new QLineEdit)
+    , passwordLineEdit(new QLineEdit)
+    , keyPathLineEdit (new QLineEdit)
     , connectButton(new QPushButton(tr("Connect")))
     , tcpSocket(new QTcpSocket)
     , connectProgress(new QProgressBar)
@@ -43,12 +45,20 @@ ConnectDialog::ConnectDialog(QWidget *parent)
     portLineEdit->setValidator(new QIntValidator(1, 65535, this));
     portLineEdit->setText(QString::number(PORT));
 
+    passwordLineEdit->setEchoMode(QLineEdit::Password);
+    passwordLineEdit->setInputMethodHints(Qt::ImhHiddenText| Qt::ImhNoPredictiveText|Qt::ImhNoAutoUppercase);
+
     QLabel *hostLabel = new QLabel(tr("&Server name:"));
     hostLabel->setBuddy(hostCombo);
     QLabel *portLabel = new QLabel(tr("S&erver port:"));
     portLabel->setBuddy(portLineEdit);
     QLabel *loginLabel = new QLabel(tr("&Login:"));
     loginLabel->setBuddy(loginLineEdit);
+    QLabel *passwordLabel = new QLabel(tr("&Password:"));
+    passwordLabel->setBuddy(passwordLineEdit);
+    QLabel *keyFileLabel = new QLabel(tr("Key file:"));
+    QPushButton *browse = new QPushButton(tr("Browse..."));
+    keyPathLineEdit->setReadOnly(true);
 
     connectProgress->setTextVisible(false);
 
@@ -73,6 +83,9 @@ ConnectDialog::ConnectDialog(QWidget *parent)
     connect(loginLineEdit, SIGNAL(textChanged(QString)),
             SLOT(enableConnectButton())
             );
+    connect(passwordLineEdit, SIGNAL(textChanged(QString)),
+            SLOT(enableConnectButton())
+            );
     connect(connectButton, SIGNAL(clicked(bool)),
             SLOT(connectToServer())
             );
@@ -85,6 +98,9 @@ ConnectDialog::ConnectDialog(QWidget *parent)
     connect(tcpSocket, SIGNAL(readyRead()),
             SLOT(showResult())
             );
+    connect(browse, SIGNAL(clicked(bool)),
+            SLOT(browseKeyFile())
+            );
 
     QGroupBox *loginBox = new QGroupBox(tr("Login options")),
             *connectBox = new QGroupBox(tr("Connect options"));
@@ -92,6 +108,9 @@ ConnectDialog::ConnectDialog(QWidget *parent)
             *connectLayout = new QFormLayout;
 
     loginLayout->addRow(loginLabel, loginLineEdit);
+    loginLayout->addRow(passwordLabel, passwordLineEdit);
+    loginLayout->addWidget(keyFileLabel);
+    loginLayout->addRow(browse, keyPathLineEdit);
     loginBox->setLayout(loginLayout);
 
     connectLayout->addRow(hostLabel, hostCombo);
@@ -109,6 +128,17 @@ ConnectDialog::ConnectDialog(QWidget *parent)
 
     setWindowTitle(tr("Connection"));
     loginLineEdit->setFocus();
+
+}
+
+void ConnectDialog::browseKeyFile()
+{
+    QString fileName = QFileDialog::getOpenFileName(this, tr("Select key file"));
+    if (!fileName.isNull())
+    {
+        keyPathLineEdit->setText(fileName);
+        enableConnectButton();
+    }
 }
 
 void ConnectDialog::connectToServer()
@@ -155,27 +185,51 @@ void ConnectDialog::enableConnectButton()
 {
     connectButton->setEnabled(  !hostCombo->currentText().isEmpty() &&
                                 !portLineEdit->text().isEmpty()     &&
-                                !loginLineEdit->text().isEmpty()
+                                !loginLineEdit->text().isEmpty()    &&
+                                !passwordLineEdit->text().isEmpty() &&
+                                !keyPathLineEdit->text().isEmpty()
                                 );
 
 }
 
 void ConnectDialog::sendLogin()
 {
-    connectProgress->setRange(0, 1);
-    connectButton->setEnabled(true);
+    //read server_pk from file and decode from base64
+    AutoSeededRandomPool rng;
+    FileSource file("server_pk", true, new Base64Decoder);
+    RSA::PublicKey serverPK;
+    serverPK.BERDecode(file);
 
+    //generate session key
+    SecByteBlock key(AES::MAX_KEYLENGTH);
+    rng.GenerateBlock(key, key.size());
+
+    qDebug() << QByteArray((char*)key.data(), key.size()).toHex();
+
+    //encode session key with server pk
+    std::string encSessionKey;
+    RSAES_OAEP_SHA_Encryptor e(serverPK);
+    StringSource(key, key.size(), true,
+          new PK_EncryptorFilter(rng, e,
+                new StringSink(encSessionKey)
+          )
+    );
+
+    //send encrypted session key
+    QByteArray data(encSessionKey.c_str(), encSessionKey.length());
     QByteArray block;
     QDataStream out(&block, QIODevice::WriteOnly);
     out.setVersion(QDataStream::Qt_4_0);
 
-    out << loginLineEdit->text();
-
+    out << data << loginLineEdit->text();
     tcpSocket->write(block);
 }
 
 void ConnectDialog::showResult()
 {
+    connectProgress->setRange(0, 1);
+    connectButton->setEnabled(true);
+
     QString answer;
     QChar ind;
 
@@ -199,3 +253,52 @@ void ConnectDialog::showResult()
 
 }
 
+SecByteBlock ConnectDialog::getHashFromPassword(const QString& password)
+{
+    SHA256 hash;
+    byte aes_key[SHA256::DIGESTSIZE];
+    memset(aes_key, 0, SHA256::DIGESTSIZE);
+    QByteArray password_bytes = password.toUtf8();
+    hash.Update((byte*)password_bytes.constData(), password_bytes.length());
+    hash.Final(aes_key);
+    SecByteBlock key(aes_key, SHA256::DIGESTSIZE);
+    memset(aes_key, 0, SHA256::DIGESTSIZE);
+
+    return key;
+}
+
+void ConnectDialog::makeSecureConnection()
+{
+    //read server_pk from file and decode from base64
+    AutoSeededRandomPool rng;
+    FileSource file("server_pk", true, new Base64Decoder);
+    RSA::PublicKey serverPK;
+    serverPK.BERDecode(file);
+
+    //generate session key
+    SecByteBlock key(AES::MAX_KEYLENGTH);
+    rng.GenerateBlock(key, key.size());
+
+    qDebug() << QByteArray((char*)key.data(), key.size()).toHex();
+
+    //encode session key with server pk
+    std::string encSessionKey;
+    RSAES_OAEP_SHA_Encryptor e(serverPK);
+    StringSource(key, key.size(), true,
+          new PK_EncryptorFilter(rng, e,
+                new StringSink(encSessionKey)
+          )
+    );
+
+    //send encrypted session key
+    QByteArray data(encSessionKey.c_str(), encSessionKey.length());
+    QByteArray block;
+    QDataStream out(&block, QIODevice::WriteOnly);
+    out.setVersion(QDataStream::Qt_4_0);
+
+    out << data;
+
+    tcpSocket->write(block);
+
+
+}

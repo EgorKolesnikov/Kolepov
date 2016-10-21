@@ -6,12 +6,24 @@
 #include <QLineEdit>
 #include "protocol.h"
 
+#include <string>
+
+#include "sha.h"
+#include "secblock.h"
+#include "files.h"
+#include "base64.h"
+#include "rsa.h"
+#include "aes.h"
+#include "osrng.h"
+
 class QComboBox;
 class QLabel;
 class QLineEdit;
 class QPushButton;
 class QTcpSocket;
 class QProgressBar;
+
+using namespace CryptoPP;
 
 class ConnectDialog : public QDialog
 {
@@ -29,6 +41,7 @@ private slots:
     void enableConnectButton();
     void sendLogin();
     void showResult();
+    void browseKeyFile();
 
 private:
     const quint16 PORT = 55555;
@@ -36,10 +49,16 @@ private:
     QComboBox *hostCombo;
     QLineEdit *portLineEdit;
     QLineEdit *loginLineEdit;
+    QLineEdit *passwordLineEdit;
+    QLineEdit *keyPathLineEdit;
     QPushButton *connectButton;
     QProgressBar *connectProgress;
 
     QTcpSocket *tcpSocket;
+
+    SecByteBlock getHashFromPassword(const QString& password);
+    void makeSecureConnection();
+
 };
 
 #endif

@@ -1,7 +1,7 @@
 #ifndef SERVERTHREAD_H
 #define SERVERTHREAD_H
 
-
+#include <string>
 
 #include <QThread>
 #include <QTcpSocket>
@@ -9,6 +9,14 @@
 #include <QHostAddress>
 #include "sqlwrapper.h"
 
+#include "secblock.h"
+#include "files.h"
+#include "rsa.h"
+#include "base64.h"
+#include "osrng.h"
+#include "secblock.h"
+
+using namespace CryptoPP;
 
 class ServerThread: public QThread
 {

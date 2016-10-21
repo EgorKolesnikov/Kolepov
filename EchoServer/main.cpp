@@ -12,7 +12,6 @@ int main(int argc, char *argv[])
 
     EchoServer server;
     server.show();
-    qsrand(QTime(0,0,0).secsTo(QTime::currentTime()));
 
     return app.exec();
 

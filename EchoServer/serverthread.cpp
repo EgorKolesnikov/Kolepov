@@ -20,9 +20,29 @@ void ServerThread::run()
     }
     tcpSocket.waitForReadyRead();
 
-    QString user;
+
+    //read server_ k from file and decode from base64
+    AutoSeededRandomPool rng;
+    FileSource file("server_sk", true, new Base64Decoder);
+    RSA::PrivateKey serverSK;
+    serverSK.BERDecode(file);
+
+    //decrypt session key
     QDataStream in(&tcpSocket);
     in.setVersion(QDataStream::Qt_4_0);
+    QByteArray data;
+    in >> data;
+
+    std::string encSessionKey(data.constData(), data.length());
+    SecByteBlock sessionKey(AES::MAX_KEYLENGTH);
+    RSAES_OAEP_SHA_Decryptor d(serverSK);
+    StringSource ss(encSessionKey, true,
+                 new PK_DecryptorFilter(rng, d,
+                        new ArraySink(sessionKey, sessionKey.size())
+                 )
+    );
+
+    QString user;
     in >> user;
 
     QByteArray block;

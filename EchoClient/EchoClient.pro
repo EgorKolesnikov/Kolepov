@@ -24,3 +24,13 @@ HEADERS  += echoclient.h \
 
 RESOURCES += \
     resource.qrc
+
+
+
+win32: LIBS += -L$$PWD/../../cryptopp/x64/Output/Debug/ -lcryptlib
+
+INCLUDEPATH += $$PWD/../../cryptopp
+DEPENDPATH += $$PWD/../../cryptopp
+
+win32:!win32-g++: PRE_TARGETDEPS += $$PWD/../../cryptopp/x64/Output/Debug/cryptlib.lib
+else:win32-g++: PRE_TARGETDEPS += $$PWD/../../cryptopp/x64/Output/Debug/libcryptlib.a
