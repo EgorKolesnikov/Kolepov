@@ -1,0 +1,73 @@
+DROP TABLE users;
+DROP TABLE messages;
+
+CREATE TABLE users (
+                 user_id integer PRIMARY KEY AUTOINCREMENT NOT NULL UNIQUE,
+                 name VARCHAR(255) NOT NULL UNIQUE,
+                 role VARCHAR(1) NOT NULL,
+  				 client_pk VARCHAR(600) NOT NULL
+);
+
+INSERT INTO users (name, role, client_pk) VALUES('Denis', 'a', 
+'MIIBoDANBgkqhkiG9w0BAQEFAAOCAY0AMIIBiAKCAYEA28FNZMMJQt+swutNL5pmJ5DeheHB
+AmqmwE5uEnS10Uo5Ze871y1dKXm0hhgOEBATONMGZ+NdDWVL+CptTOYL9x5mW1oHSoyzUUL0
+pbNC9dJX5JS6hE/6WEaqXQItNFmPh16HruLZ7UmfVsk6xAgf+zL0RdfO/amNJzhuFFRRiH/x
+pThpJuVMVy5cymirX3d+quYztSjMi1a+ZHFuquX8kuuWBw/e9nubIFkleYE16VVP/G89VUAs
+FPx/VsjKWnFra8Xsu5teznvtGotKT/d1W5ZgvVCEWgFlK1t4sSy+v2xfNnJLQvOEJegL46kT
+TY79kOyppGgrcsF2wqaZXqRxpH/9rL30i6srIMyNNRnkywnbY34tefRcM/BYFQT03J0XGwqY
+JIpH2bbgoE68EmlIA6ss+D3IPnx5imC3Kr7uS3N2eexcmEettPvuDM2+Wy2pxHO2Fs51p2Wl
+wA/HwKUMgSHqvzq/nhUlqcWESPKLxwhNbMtq2zgwJSXahC9TxVafAgER
+');
+
+INSERT INTO users (name, role, client_pk) VALUES('Egor', 'u',
+'MIIBoDANBgkqhkiG9w0BAQEFAAOCAY0AMIIBiAKCAYEAmEoaTh4Rv1tz4G/uZxMEo4jMxWtP
+ur1aXQR7wtJhj8oJurtRtsrm5IoU/hoWIiZhZA8WnX2x0JjyZSsNfbItD4m9/rKFk4w02pJt
+RuUnAjrrzozId2tVvr0WiG28T+c7+L2ZGryaqgv0OhCz3TW1fnZHOI1B8ZDoxAasHGtgJ16s
+FlUGzn03ARul+nyKdV/HikwMvliWASh6+xjbtyDoIaPyd/nAJPDDoOk6h5FJYQC07hPKZoSX
+xG4lBXtgRv5F5rtnfgvSmqwU4ljsdHP7Y9OpZXFCxy/MOp16OW77+WkkATLV3WXXbjBgAxtY
+kNuZWgjFY9lCK/3uNm7+GW9JY35fgMqIZnzfR2PrWMKikb8JElX6/Swk/rZQFNEXty9A9/e3
+/cqF47la2nPMpLmseXleRoDLeU9bLvlHgKJhyQ6Q5ISiDl47Etp/t1QJUW43FylzMZBM+DhY
+ovKO1BYf+S28KUXoM/NdKjto2Va3kvqxqEyoS/dCJfxin+eHVmcvAgER
+');
+
+INSERT INTO users (name, role, client_pk) VALUES('Murray', 'u',
+'MIIBoDANBgkqhkiG9w0BAQEFAAOCAY0AMIIBiAKCAYEAkyJOMwB5OqzGyUxdhFdI3vdzvHL7
+Cah2iwyTuUEb1+ARuv9WJsvSX4sMWuECyyddmvXx9dh0ybtsRB8ZoI38/rQfQ+mXOMHFTx+Y
+CbtttzdEQ9f1lOBYkPfdoMyoha4KRnfXnJrKYfA7LdwOMCjFYfDJQjd6kxilQKvyq08sMjit
+pkR5L/pWwW2zs3l68eiw0BRMggjnw2FZPieiWuv1YLjDgZzcegOlEwZW3AmjO9C+WDjyHFik
+Mn1p2GQW+6xyyewFHZ7z0X2aX9p05NBUdrURXq26ATxR+R/JuroLrc3bGSVqNsvpAalaBLGz
+jyJXmpDkG5uB3knp35CgkPtH6jx2V9sD9wf07/zBosq5Dwve5hwhVSvK0yDBv5Pff//wnW82
+pSimMn3YALc1HPlhQn0I5x/q3WvJPskj1JSpAobSAxlaF0/Ak+v6d6+gEUctEscNGM589Yca
++w34uey1DemxVvwskxhijDAqViJNpUVYKMSCTrz9rt3OS8htpX6HAgER
+');
+
+INSERT INTO users (name, role, client_pk) VALUES('Henry', 'u',
+'MIIBoDANBgkqhkiG9w0BAQEFAAOCAY0AMIIBiAKCAYEAsqNPxKnXE03FoLcuqmy+XcpYunz5
+7cD51ORKBzG2ChROaWbTePyVsR8p4XcxajuQ/SMF9DpOcJC3SS+x+BhE6UVnYVc8XisALZAa
+2KikC96UoToyVoniG0ycF1Vu1RPHCok3M50CgMVy7jNk0SgV8Za1fjzi/AciFtmCwQtlKXlx
+1I4mbAxQxK4uZaCVrIA0kucDP/E7IF9wO7assLmm+xtrrTPRbPw34cIAvOLttlMPU4879aDL
+FlKiGuqYFjak7AZbvY8xkLrkgIqfYgG1O+Fzb+Q54lozvh3X4oaQauGzzzxPoknSp4U5/7Mf
++2BDM6k79fo4f6eujf6cEEH6ciPLRS02qvz+HGNxcG1Zm0+XvKnPQhzoIOccpBvuJ7z3Prq1
+1hZX5iVN/iLg32CMS8cUouW35k/4mUM3TH3+NACHCugbJfO7lX1DHK32jEhq4Qi5A+tbA/6S
+13CP707yqn5tJavO1Qi8/ONhF/YMwV2bs+GcDIeVKdkXzgCq815VAgER
+');
+
+INSERT INTO users (name, role, client_pk) VALUES('Zu', 'u',
+'MIIBoDANBgkqhkiG9w0BAQEFAAOCAY0AMIIBiAKCAYEAjwlNuEyVGobziLlGqWL0YjQ9gh8B
+o2XfkRiFafsLuDTY+Ntqheb6/hFsitegCPm7E2gbVUdenb30HWC1cxjM6yhGZN5423TqYp+l
+qEFAJpccdoJTuOKajXwPa/x67V1hwjwxY0NUbehMOp2HwUDFhaWi4gX6Z5qbFA9xRkJROFrt
+FAv2Wk/D6IOyPFxXgi9vbYzqfSiPyCW+TlsztWl5y04yr+OwbY866lLkcM+0U1QTu8pcrHjx
+BmVdrMPtrPSkFEkWJZXrRn+CUTLvgf7XCjai62I70q3H04e/vdbZ58rpUYxGZZjSK9XYgWBw
+oW4N3p8PRZqYE/1o315tNH0ZdeZiGKWZnX/V7F/dXeQPgG1TIohCFmq34gLFsCcdc6/cw/cZ
+2s1GRHdrSZZFJa99tYXThGHKhTwgHZN3qbKMdhMG+sZzizM0qon8fKhUFia8zJ2CLn1PVB/B
+UMYfJfmC0DNnGXL2v0C4rpWsBnC4L42cfqWNL8YaymB85H6yQ1tpAgER
+');
+
+CREATE TABLE messages(
+                 message_id integer PRIMARY KEY AUTOINCREMENT NOT NULL UNIQUE,
+                 user_id integer NOT NULL,
+                 text VARCHAR(1024),
+                 CONSTRAINT messages_fk FOREIGN KEY(user_id) REFERENCES users(user_id)
+);
+
+INSERT INTO messages (user_id, text) VALUES (2, 'Test message');
