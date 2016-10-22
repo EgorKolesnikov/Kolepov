@@ -8,6 +8,8 @@
 
 #include <string>
 
+#include "securesocket.h"
+
 #include "sha.h"
 #include "secblock.h"
 #include "files.h"
@@ -32,15 +34,14 @@ class ConnectDialog : public QDialog
 public:
     explicit ConnectDialog(QWidget *parent = Q_NULLPTR);
 
-    QTcpSocket* socket() { return tcpSocket; }
+    SecureSocket* socket() { return tcpSocket; }
     QString username() { return loginLineEdit->text(); }
 
 private slots:
     void connectToServer();
     void displayError(QAbstractSocket::SocketError socketError);
     void enableConnectButton();
-    void sendLogin();
-    void showResult();
+    void authenticate();
     void browseKeyFile();
 
 private:
@@ -54,11 +55,7 @@ private:
     QPushButton *connectButton;
     QProgressBar *connectProgress;
 
-    QTcpSocket *tcpSocket;
-
-    SecByteBlock getHashFromPassword(const QString& password);
-    void makeSecureConnection();
-
+    SecureSocket *tcpSocket;
 };
 
 #endif

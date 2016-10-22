@@ -16,12 +16,16 @@ SOURCES += main.cpp\
         echoserver.cpp \
     serverthread.cpp \
     sqlwrapper.cpp \
-    protocol.cpp
+    protocol.cpp \
+    cryption.cpp \
+    securesocket.cpp
 
 HEADERS  += echoserver.h \
     serverthread.h \
     sqlwrapper.h \
-    protocol.h
+    protocol.h \
+    cryption.h \
+    securesocket.h
 
 RESOURCES +=
 

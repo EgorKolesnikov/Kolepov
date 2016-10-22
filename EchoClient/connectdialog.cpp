@@ -11,7 +11,7 @@ ConnectDialog::ConnectDialog(QWidget *parent)
     , passwordLineEdit(new QLineEdit)
     , keyPathLineEdit (new QLineEdit)
     , connectButton(new QPushButton(tr("Connect")))
-    , tcpSocket(new QTcpSocket)
+    , tcpSocket(new SecureSocket)
     , connectProgress(new QProgressBar)
 {
 
@@ -93,10 +93,7 @@ ConnectDialog::ConnectDialog(QWidget *parent)
             SLOT(displayError(QAbstractSocket::SocketError))
             );
     connect(tcpSocket, SIGNAL(connected()),
-            SLOT(sendLogin())
-            );
-    connect(tcpSocket, SIGNAL(readyRead()),
-            SLOT(showResult())
+            SLOT(authenticate())
             );
     connect(browse, SIGNAL(clicked(bool)),
             SLOT(browseKeyFile())
@@ -192,7 +189,7 @@ void ConnectDialog::enableConnectButton()
 
 }
 
-void ConnectDialog::sendLogin()
+void ConnectDialog::authenticate()
 {
     //read server_pk from file and decode from base64
     AutoSeededRandomPool rng;
@@ -204,8 +201,6 @@ void ConnectDialog::sendLogin()
     SecByteBlock key(AES::MAX_KEYLENGTH);
     rng.GenerateBlock(key, key.size());
 
-    qDebug() << QByteArray((char*)key.data(), key.size()).toHex();
-
     //encode session key with server pk
     std::string encSessionKey;
     RSAES_OAEP_SHA_Encryptor e(serverPK);
@@ -214,6 +209,7 @@ void ConnectDialog::sendLogin()
                 new StringSink(encSessionKey)
           )
     );
+
 
     //send encrypted session key
     QByteArray data(encSessionKey.c_str(), encSessionKey.length());
@@ -223,82 +219,68 @@ void ConnectDialog::sendLogin()
 
     out << data << loginLineEdit->text();
     tcpSocket->write(block);
-}
 
-void ConnectDialog::showResult()
-{
-    connectProgress->setRange(0, 1);
-    connectButton->setEnabled(true);
-
-    QString answer;
-    QChar ind;
-
-    QDataStream in(tcpSocket);
-    in.setVersion(QDataStream::Qt_4_0);
-
-    in.startTransaction();
-    if (!in.commitTransaction())
+    if (tcpSocket->waitForReadyRead() == false)
+    {
+        connectProgress->setRange(0, 1);
+        connectButton->setEnabled(true);
+        QMessageBox::information(this, tr("Server Error"),
+                                 "Server dose not response.");
+        close();
         return;
-
-    in >> ind;
-    if (ind == PROTOCOL::LOGIN_OK)
-    {
-        this->accept();
-    }
-    else
-    {
-        in >> answer;
-        QMessageBox::information(this, "Server Response", answer);
     }
 
+    tcpSocket->startEncryptedMode(key);
+    auto authEncr = tcpSocket->readBlock();
+
+    if (authEncr.first == false)
+    {
+        connectProgress->setRange(0, 1);
+        connectButton->setEnabled(true);
+        QMessageBox::information(this, tr("Server Error"),
+                                 "Server authentication error.");
+        close();
+        return;
+    }
+
+    QByteArray decrQuestion = Cryption::checkClientSK(
+                keyPathLineEdit->text(),
+                passwordLineEdit->text(),
+                authEncr.second);
+    if (decrQuestion.isEmpty())
+    {
+        connectProgress->setRange(0, 1);
+        connectButton->setEnabled(true);
+        QMessageBox::information(this, tr("Login Error"),
+                                 "Incorrect authentication data.");
+        return;
+    }
+    tcpSocket->writeBlock(decrQuestion);
 }
 
-SecByteBlock ConnectDialog::getHashFromPassword(const QString& password)
-{
-    SHA256 hash;
-    byte aes_key[SHA256::DIGESTSIZE];
-    memset(aes_key, 0, SHA256::DIGESTSIZE);
-    QByteArray password_bytes = password.toUtf8();
-    hash.Update((byte*)password_bytes.constData(), password_bytes.length());
-    hash.Final(aes_key);
-    SecByteBlock key(aes_key, SHA256::DIGESTSIZE);
-    memset(aes_key, 0, SHA256::DIGESTSIZE);
-
-    return key;
-}
-
-void ConnectDialog::makeSecureConnection()
-{
-    //read server_pk from file and decode from base64
-    AutoSeededRandomPool rng;
-    FileSource file("server_pk", true, new Base64Decoder);
-    RSA::PublicKey serverPK;
-    serverPK.BERDecode(file);
-
-    //generate session key
-    SecByteBlock key(AES::MAX_KEYLENGTH);
-    rng.GenerateBlock(key, key.size());
-
-    qDebug() << QByteArray((char*)key.data(), key.size()).toHex();
-
-    //encode session key with server pk
-    std::string encSessionKey;
-    RSAES_OAEP_SHA_Encryptor e(serverPK);
-    StringSource(key, key.size(), true,
-          new PK_EncryptorFilter(rng, e,
-                new StringSink(encSessionKey)
-          )
-    );
-
-    //send encrypted session key
-    QByteArray data(encSessionKey.c_str(), encSessionKey.length());
-    QByteArray block;
-    QDataStream out(&block, QIODevice::WriteOnly);
-    out.setVersion(QDataStream::Qt_4_0);
-
-    out << data;
-
-    tcpSocket->write(block);
+//void ConnectDialog::showResult()
+//{
 
 
-}
+//    QString answer;
+//    QChar ind;
+
+//    QDataStream in(tcpSocket);
+//    in.setVersion(QDataStream::Qt_4_0);
+
+//    in.startTransaction();
+//    if (!in.commitTransaction())
+//        return;
+
+//    in >> ind;
+//    if (ind == PROTOCOL::LOGIN_OK)
+//    {
+//        this->accept();
+//    }
+//    else
+//    {
+//        in >> answer;
+//        QMessageBox::information(this, "Server Response", answer);
+//    }
+
+//}

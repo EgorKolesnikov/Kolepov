@@ -16,6 +16,9 @@
 #include "osrng.h"
 #include "secblock.h"
 
+#include "securesocket.h"
+#include "cryption.h"
+
 using namespace CryptoPP;
 
 class ServerThread: public QThread
@@ -27,7 +30,7 @@ public:
     ServerThread(int socketDescriptor, SqlWrapper *users, QObject *parent);
 
     void run() Q_DECL_OVERRIDE;
-    int authenticate(const QString& user_name);
+    int authenticate(SecureSocket *tcpSocket);
     QChar authorize(const QString& user_name);
     void manageUserQuery(QDataStream& in, const QString& user_name, int user_id);
 

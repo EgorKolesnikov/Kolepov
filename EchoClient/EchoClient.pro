@@ -16,11 +16,15 @@ TEMPLATE = app
 SOURCES += main.cpp\
         echoclient.cpp \
     connectdialog.cpp \
-    protocol.cpp
+    protocol.cpp \
+    cryption.cpp \
+    securesocket.cpp
 
 HEADERS  += echoclient.h \
     connectdialog.h \
-    protocol.h
+    protocol.h \
+    cryption.h \
+    securesocket.h
 
 RESOURCES += \
     resource.qrc

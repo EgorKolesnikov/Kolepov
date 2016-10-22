@@ -12,7 +12,7 @@ ServerThread::ServerThread(int socketDescriptor, SqlWrapper *db,  QObject *paren
 
 void ServerThread::run()
 {
-    QTcpSocket tcpSocket;
+    SecureSocket tcpSocket;
     if (!tcpSocket.setSocketDescriptor(m_socketDescriptor)) {
         qDebug() << "Error creating QTcpSocket in thread.\n";
         emit error(tcpSocket.error());
@@ -20,37 +20,16 @@ void ServerThread::run()
     }
     tcpSocket.waitForReadyRead();
 
-
-    //read server_ k from file and decode from base64
-    AutoSeededRandomPool rng;
-    FileSource file("server_sk", true, new Base64Decoder);
-    RSA::PrivateKey serverSK;
-    serverSK.BERDecode(file);
-
-    //decrypt session key
-    QDataStream in(&tcpSocket);
-    in.setVersion(QDataStream::Qt_4_0);
-    QByteArray data;
-    in >> data;
-
-    std::string encSessionKey(data.constData(), data.length());
-    SecByteBlock sessionKey(AES::MAX_KEYLENGTH);
-    RSAES_OAEP_SHA_Decryptor d(serverSK);
-    StringSource ss(encSessionKey, true,
-                 new PK_DecryptorFilter(rng, d,
-                        new ArraySink(sessionKey, sessionKey.size())
-                 )
-    );
-
-    QString user;
-    in >> user;
+    authenticate(&tcpSocket);
+    QString user = "Test";
 
     QByteArray block;
     QDataStream out(&block, QIODevice::WriteOnly);
     out.setVersion(QDataStream::Qt_4_0);
 
     bool authPassed = false;
-    int user_id = authenticate(user);
+    //int user_id = authenticate(user);
+    int user_id = 0;
 
     if(user_id == -1){
         out << PROTOCOL::LOGIN_DENIED
@@ -105,7 +84,8 @@ void ServerThread::run()
     tcpSocket.waitForReadyRead();
     tcpSocket.readAll();    //take from socket PROTOCOL::INIT_MESSAGE_LIST
     //If user is an admin - send him list of users
-    QChar role = authorize(user);
+    //QChar role = authorize(user);
+    QChar role = 'a';
     if (role == 'a')
     {
         block.clear();
@@ -158,11 +138,65 @@ void ServerThread::run()
     emit removeUser(user);
 }
 
-int ServerThread::authenticate(const QString &user_name){
-    QSqlQuery query = database->get_user(user_name);
+int ServerThread::authenticate(SecureSocket *tcpSocket)
+{
+    //read server_sk from file and decode from base64
+    AutoSeededRandomPool rng;
+    FileSource file("server_sk", true, new Base64Decoder);
+    RSA::PrivateKey serverSK;
+    serverSK.BERDecode(file);
+
+    //decrypt session key
+    QDataStream in(tcpSocket);
+    in.setVersion(QDataStream::Qt_4_0);
+    QByteArray data;
+    in >> data;
+
+    std::string encSessionKey(data.constData(), data.length());
+    SecByteBlock sessionKey(AES::MAX_KEYLENGTH);
+    RSAES_OAEP_SHA_Decryptor d(serverSK);
+    StringSource (encSessionKey, true,
+                 new PK_DecryptorFilter(rng, d,
+                        new ArraySink(sessionKey, sessionKey.size())
+                 )
+    );
+
+    QString user;
+    in >> user;
+
+    tcpSocket->startEncryptedMode(sessionKey);
+
+    QSqlQuery query = database->get_user(user);
     if (query.isActive()) {
         query.next();
-        if(query.value(1).toString().compare(user_name) == 0){
+        if(query.value(1).toString().compare(user) == 0)
+        {
+            auto texts = Cryption::generateTextForChecking(
+                        query.value(3).toByteArray(),
+                        16);
+            tcpSocket->writeBlock(texts.second);
+
+            if (!tcpSocket->waitForReadyRead())
+            {
+                qDebug() << "Auth " << user << " failed.";
+                return 0;
+            }
+
+            auto clientAnswer = tcpSocket->readBlock();
+            if (!clientAnswer.first)
+            {
+                qDebug() << "Message corrupted.";
+                return 0;
+            }
+
+            if (texts.first != clientAnswer.second)
+            {
+                qDebug() << "Incorrect dectyprion.";
+                return 0;
+            }
+
+            qDebug() << "passed";
+
             return query.value(0).toInt();
         }
         else{
