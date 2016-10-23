@@ -6,57 +6,54 @@ ServerThread::ServerThread(int socketDescriptor, SqlWrapper *db,  QObject *paren
     , m_socketDescriptor(socketDescriptor)
     , database(db)
     , m_clientDisconnected(false)
+    , m_tcpSocket(new SecureSocket)
 {
 
 }
 
 void ServerThread::run()
 {
-    SecureSocket tcpSocket;
-    if (!tcpSocket.setSocketDescriptor(m_socketDescriptor)) {
+    if (!m_tcpSocket->setSocketDescriptor(m_socketDescriptor)) {
         qDebug() << "Error creating QTcpSocket in thread.\n";
-        emit error(tcpSocket.error());
+        emit error(m_tcpSocket->error());
         return;
     }
-    tcpSocket.waitForReadyRead();
+    m_tcpSocket->waitForReadyRead();
 
-    authenticate(&tcpSocket);
-    QString user = "Test";
+    int authRes = authenticate();
 
     QByteArray block;
     QDataStream out(&block, QIODevice::WriteOnly);
     out.setVersion(QDataStream::Qt_4_0);
 
-    bool authPassed = false;
-    //int user_id = authenticate(user);
-    int user_id = 0;
 
-    if(user_id == -1){
-        out << PROTOCOL::LOGIN_DENIED
-            << tr("Error. Maybe you should change path to database.");
-    }
-    else if(user_id == 0){
-        out << PROTOCOL::LOGIN_DENIED << tr("Access denied.");
-    }
-    else{
-        out << PROTOCOL::LOGIN_OK;
-        authPassed = true;
-    }
-
-    tcpSocket.write(block);
-    tcpSocket.flush();
-    tcpSocket.waitForBytesWritten();
-
-    if (!authPassed)
+    switch (authRes)
     {
-        tcpSocket.disconnectFromHost();
-        tcpSocket.waitForDisconnected();
+        case USER_NOT_FOUND:
+        case CHALLENGE_FAILED:
+            out << PROTOCOL::LOGIN_DENIED << tr("Check authentication data.");
+            break;
+
+        case CHALLENGE_PASSED:
+            out << PROTOCOL::LOGIN_OK;
+            break;
+    }
+
+    m_tcpSocket->writeBlock(block);
+    m_tcpSocket->flush();
+    m_tcpSocket->waitForBytesWritten();
+
+    if (authRes != CHALLENGE_PASSED)
+    {
+        m_tcpSocket->disconnectFromHost();
+        m_tcpSocket->waitForDisconnected();
+        emit userAuthenticationFailed(m_username);
         return;
     }
 
-    emit connectedUser(user, &tcpSocket);
+    emit connectedUser(m_username, m_tcpSocket);
 
-    connect(&tcpSocket, SIGNAL(disconnected()),
+    connect(m_tcpSocket, SIGNAL(disconnected()),
             SLOT(disconnectedUser()));
 
 
@@ -77,12 +74,12 @@ void ServerThread::run()
         }
         out.device()->seek(sizeof(PROTOCOL::SEND_INIT_MESSAGES));
         out << numOfInitMessages;
-        tcpSocket.write(block);
-        tcpSocket.flush();
+        m_tcpSocket->write(block);
+        m_tcpSocket->flush();
     }
 
-    tcpSocket.waitForReadyRead();
-    tcpSocket.readAll();    //take from socket PROTOCOL::INIT_MESSAGE_LIST
+    m_tcpSocket->waitForReadyRead();
+    m_tcpSocket->readAll();    //take from socket PROTOCOL::INIT_MESSAGE_LIST
     //If user is an admin - send him list of users
     //QChar role = authorize(user);
     QChar role = 'a';
@@ -106,8 +103,8 @@ void ServerThread::run()
         out.device()->seek(sizeof(PROTOCOL::USER_MODERATOR_LIST));
         out << membersCount;
 
-        tcpSocket.write(block);
-        tcpSocket.flush();
+        m_tcpSocket->write(block);
+        m_tcpSocket->flush();
     }
     else if (role == 'm')
     {
@@ -116,29 +113,55 @@ void ServerThread::run()
         out.setVersion(QDataStream::Qt_4_0);
 
         out << PROTOCOL::INIT_MODERATOR;
-        tcpSocket.write(block);
-        tcpSocket.flush();
+        m_tcpSocket->write(block);
+        m_tcpSocket->flush();
     }
 
     //Main cycle
     while(!m_clientDisconnected)
     {
-        if (tcpSocket.waitForReadyRead())
+        if (m_tcpSocket->waitForReadyRead())
         {
-            QDataStream in(&tcpSocket);
+            QDataStream in(m_tcpSocket);
             in.setVersion(QDataStream::Qt_4_0);
 
             in.startTransaction();
             if (!in.commitTransaction())
                 continue;
 
-            manageUserQuery(in, user, user_id);
+            manageUserQuery(in, m_username, m_userID);
         }
     }
-    emit removeUser(user);
+    emit removeUser(m_username);
 }
 
-int ServerThread::authenticate(SecureSocket *tcpSocket)
+int ServerThread::challenge(const QByteArray& clientPK)
+{
+
+    auto texts = Cryption::generateTextForChecking(
+                clientPK,
+                16);
+    m_tcpSocket->writeBlock(texts.second);
+
+    m_tcpSocket->waitForReadyRead();
+    auto clientAnswer = m_tcpSocket->readBlock();
+
+    if (!clientAnswer.first)
+    {
+        qDebug() << "Message corrupted.";
+        return CHALLENGE_FAILED;
+    }
+
+    if (texts.first != clientAnswer.second)
+    {
+        qDebug() << "Incorrect decryption.";
+        return CHALLENGE_FAILED;
+    }
+
+    return CHALLENGE_PASSED;
+}
+
+int ServerThread::authenticate()
 {
     //read server_sk from file and decode from base64
     AutoSeededRandomPool rng;
@@ -147,7 +170,7 @@ int ServerThread::authenticate(SecureSocket *tcpSocket)
     serverSK.BERDecode(file);
 
     //decrypt session key
-    QDataStream in(tcpSocket);
+    QDataStream in(m_tcpSocket);
     in.setVersion(QDataStream::Qt_4_0);
     QByteArray data;
     in >> data;
@@ -161,51 +184,21 @@ int ServerThread::authenticate(SecureSocket *tcpSocket)
                  )
     );
 
-    QString user;
-    in >> user;
+    in >> m_username;
 
-    tcpSocket->startEncryptedMode(sessionKey);
+    m_tcpSocket->startEncryptedMode(sessionKey);
 
-    QSqlQuery query = database->get_user(user);
+    QSqlQuery query = database->get_user(m_username);
     if (query.isActive()) {
         query.next();
-        if(query.value(1).toString().compare(user) == 0)
+        if(query.value(1).toString().compare(m_username) == 0)
         {
-            auto texts = Cryption::generateTextForChecking(
-                        query.value(3).toByteArray(),
-                        16);
-            tcpSocket->writeBlock(texts.second);
-
-            if (!tcpSocket->waitForReadyRead())
-            {
-                qDebug() << "Auth " << user << " failed.";
-                return 0;
-            }
-
-            auto clientAnswer = tcpSocket->readBlock();
-            if (!clientAnswer.first)
-            {
-                qDebug() << "Message corrupted.";
-                return 0;
-            }
-
-            if (texts.first != clientAnswer.second)
-            {
-                qDebug() << "Incorrect dectyprion.";
-                return 0;
-            }
-
-            qDebug() << "passed";
-
-            return query.value(0).toInt();
-        }
-        else{
-            return 0;
+            m_userID = query.value(0).toInt();
+            int res = challenge(query.value(3).toByteArray());
+            return res;
         }
     }
-    else {
-        return -1;
-    }
+    return USER_NOT_FOUND;
 }
 
 QChar ServerThread::authorize(const QString &user_name)

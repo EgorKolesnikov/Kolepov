@@ -85,11 +85,15 @@ void EchoServer::new_user()
             clientConnection, SLOT(deleteLater())
             );
 
+
     connect(thread, SIGNAL(connectedUser(QString, QTcpSocket*)),
             SLOT(addNewUserToMap(QString, QTcpSocket*))
             );
     connect(thread, SIGNAL(removeUser(QString)),
             SLOT(removeUserFromMap(QString))
+            );
+    connect(thread, SIGNAL(userAuthenticationFailed(QString)),
+            SLOT(userAuthenticationFailed(QString))
             );
 
     connect(thread, SIGNAL(addMessage(QString, int, QString)),
@@ -114,6 +118,14 @@ void EchoServer::addNewUserToMap(QString name, QTcpSocket* tcpSocket)
     connections->append(tr("%1 | %2 connected")
                         .arg(QTime::currentTime().toString())
                         .arg(name)
+                        );
+}
+
+void EchoServer::userAuthenticationFailed(QString username)
+{
+    connections->append(tr("%1 | %2 failed authentication")
+                        .arg(QTime::currentTime().toString())
+                        .arg(username)
                         );
 }
 

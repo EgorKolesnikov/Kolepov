@@ -23,6 +23,7 @@ private slots:
     void sessionOpened(QLabel *statusLabel);
     void new_user();
     void addNewUserToMap(QString name, QTcpSocket* tcpSocket);
+    void userAuthenticationFailed(QString username);
     void removeUserFromMap(QString name);
 
     void sendMessage(const QString& name, int user_id, const QString& message);

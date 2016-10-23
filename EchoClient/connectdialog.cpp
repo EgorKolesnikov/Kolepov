@@ -220,7 +220,7 @@ void ConnectDialog::authenticate()
     out << data << loginLineEdit->text();
     tcpSocket->write(block);
 
-    if (tcpSocket->waitForReadyRead() == false)
+    if (tcpSocket->waitForReadyRead(10000) == false)
     {
         connectProgress->setRange(0, 1);
         connectButton->setEnabled(true);
@@ -231,6 +231,7 @@ void ConnectDialog::authenticate()
     }
 
     tcpSocket->startEncryptedMode(key);
+    //chllenge
     auto authEncr = tcpSocket->readBlock();
 
     if (authEncr.first == false)
@@ -247,40 +248,28 @@ void ConnectDialog::authenticate()
                 keyPathLineEdit->text(),
                 passwordLineEdit->text(),
                 authEncr.second);
-    if (decrQuestion.isEmpty())
-    {
-        connectProgress->setRange(0, 1);
-        connectButton->setEnabled(true);
-        QMessageBox::information(this, tr("Login Error"),
-                                 "Incorrect authentication data.");
-        return;
-    }
     tcpSocket->writeBlock(decrQuestion);
+
+    //server answer
+    tcpSocket->waitForReadyRead();
+    authEncr = tcpSocket->readBlock();
+
+    QString answer;
+    QChar ind;
+
+    QDataStream parse(authEncr.second);
+    parse.setVersion(QDataStream::Qt_4_0);
+    parse >> ind;
+
+    if (ind == PROTOCOL::LOGIN_OK)
+    {
+        this->accept();
+    }
+    else
+    {
+        parse >> answer;
+        QMessageBox::information(this, "Login Error", answer);
+    }
+
+
 }
-
-//void ConnectDialog::showResult()
-//{
-
-
-//    QString answer;
-//    QChar ind;
-
-//    QDataStream in(tcpSocket);
-//    in.setVersion(QDataStream::Qt_4_0);
-
-//    in.startTransaction();
-//    if (!in.commitTransaction())
-//        return;
-
-//    in >> ind;
-//    if (ind == PROTOCOL::LOGIN_OK)
-//    {
-//        this->accept();
-//    }
-//    else
-//    {
-//        in >> answer;
-//        QMessageBox::information(this, "Server Response", answer);
-//    }
-
-//}

@@ -30,14 +30,16 @@ public:
     ServerThread(int socketDescriptor, SqlWrapper *users, QObject *parent);
 
     void run() Q_DECL_OVERRIDE;
-    int authenticate(SecureSocket *tcpSocket);
+    int authenticate();
     QChar authorize(const QString& user_name);
+    int challenge(const QByteArray &clientPK);
     void manageUserQuery(QDataStream& in, const QString& user_name, int user_id);
 
 
 signals:
     void error(QTcpSocket::SocketError socketError);
     void connectedUser(QString name, QTcpSocket* socket);
+    void userAuthenticationFailed(QString name);
     void removeUser(QString name);
 
     void addMessage(const QString& name, int user_id, QString message);
@@ -52,6 +54,14 @@ private:
     int m_socketDescriptor;
     bool m_clientDisconnected;
     SqlWrapper *database;
+    SecureSocket *m_tcpSocket;
+    QString m_username;
+    int m_userID;
+
+    static const int USER_NOT_FOUND = -1;
+    static const int CHALLENGE_PASSED = 0;
+    static const int CHALLENGE_FAILED = 1;
+
 };
 
 #endif // SERVERTHREAD_H
