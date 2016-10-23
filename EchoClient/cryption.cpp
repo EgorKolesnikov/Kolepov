@@ -1,16 +1,13 @@
 #include "cryption.h"
 
-QPair<QByteArray, QByteArray> Cryption::encryptMessage(
+QByteArray Cryption::encryptMessage(
         const SecByteBlock& key,
+        const byte* iv,
+        int ivByteLen,
         const QByteArray& message)
 {
-    AutoSeededRandomPool rng;
-
-    byte iv[12];
-    rng.GenerateBlock(iv, sizeof(iv));
-
     GCM<AES>::Encryption e;
-    e.SetKeyWithIV(key, key.size(), iv, sizeof(iv));
+    e.SetKeyWithIV(key, key.size(), iv, ivByteLen);
 
     std::string cipher;
     AuthenticatedEncryptionFilter ef( e,
@@ -18,7 +15,7 @@ QPair<QByteArray, QByteArray> Cryption::encryptMessage(
         TAG_SIZE /* MAC_AT_END */
     );
 
-    ef.ChannelPut(AAD_CHANNEL, iv, sizeof(iv));
+    ef.ChannelPut(AAD_CHANNEL, iv, ivByteLen);
     ef.ChannelMessageEnd(AAD_CHANNEL);
 
     ef.ChannelPut(DEFAULT_CHANNEL, (byte*)message.constData(),
@@ -26,10 +23,21 @@ QPair<QByteArray, QByteArray> Cryption::encryptMessage(
     ef.ChannelMessageEnd(DEFAULT_CHANNEL);
 
 
+    return QByteArray(cipher.c_str(), cipher.length());
+}
+
+QPair<QByteArray, QByteArray> Cryption::encryptMessage(
+        const SecByteBlock& key,
+        const QByteArray& message)
+{
+    AutoSeededRandomPool rng;
+    byte iv[12];
+    rng.GenerateBlock(iv, sizeof(iv));
     return qMakePair(QByteArray((char*)iv, sizeof(iv)),
-                     QByteArray(cipher.c_str(), cipher.length())
+                     encryptMessage(key, iv, sizeof(iv), message)
                      );
 }
+
 
 QPair<bool, QByteArray> Cryption::decryptMessage(
         const SecByteBlock& key,

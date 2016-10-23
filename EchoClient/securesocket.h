@@ -2,6 +2,7 @@
 #define SECURESOCKET_H
 
 #include <QTcpSocket>
+#include <QSet>
 #include "cryption.h"
 
 class SecureSocket : public QTcpSocket
@@ -19,6 +20,7 @@ public:
 private:
     bool m_useEncryption;
     SecByteBlock m_key;
+    QSet<QByteArray> m_usedIV;
 };
 
 #endif // SECURESOCKET_H

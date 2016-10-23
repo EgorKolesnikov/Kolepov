@@ -24,8 +24,23 @@ qint64 SecureSocket::writeBlock(const QByteArray &message)
 
     if (m_useEncryption)
     {
-        auto pair = Cryption::encryptMessage(m_key, message);
-        out << pair;
+        AutoSeededRandomPool rng;
+        byte iv[12];
+        QByteArray ivInBytes;
+        do
+        {
+            rng.GenerateBlock(iv, sizeof(iv));
+            ivInBytes = QByteArray::fromRawData(
+                        (char*)iv, sizeof(iv));
+        }
+        while (m_usedIV.contains(ivInBytes));
+        m_usedIV.insert(ivInBytes);
+
+        QByteArray cipher = Cryption::encryptMessage(
+                    m_key,
+                    iv, sizeof(iv),
+                    message);
+        out << qMakePair(ivInBytes, cipher);
     }
     else
     {
@@ -47,6 +62,7 @@ QPair<bool, QByteArray> SecureSocket::readBlock()
         try
         {
             res = Cryption::decryptMessage(m_key, pair);
+            m_usedIV.insert(pair.first);
         }
         catch (...)
         {

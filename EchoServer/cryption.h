@@ -61,9 +61,17 @@ public:
     const static int TAG_SIZE = 16;
 
     //Authenticated encryption
-    //returns (iv, cipher)
+    //return (iv, cipher)
     static QPair<QByteArray, QByteArray> encryptMessage(
             const SecByteBlock& key,
+            const QByteArray& message);
+
+    //Authenticated encryption
+    //return cipher
+    static QByteArray encryptMessage(
+            const SecByteBlock& key,
+            const byte *iv,
+            int ivByteLen,
             const QByteArray& message);
 
     //Authenticated decryption
@@ -100,8 +108,10 @@ public:
 private:
 
     //Used by generateClientRSAPiar() and checkClientSK()
-    //returns SHA256 hash of the password
+    //return SHA256 hash of the password
     static SecByteBlock getHashFromPassword(const QString& password);
+
+
 
 };
 
