@@ -22,8 +22,9 @@ SqlWrapper::SqlWrapper(QObject *parent, const QString& path)
     : QObject(parent)
     , mutex_()
 {
-    db_connection_ = QSqlDatabase::addDatabase("QSQLITE");
+    db_connection_ = QSqlDatabase::addDatabase("SQLITECIPHER");
     db_connection_.setDatabaseName(path);
+    db_connection_.setPassword("aKsip_ip");
 
     if (!db_connection_.open()) {
         QMessageBox::critical(0, qApp->tr("Cannot open database."),
