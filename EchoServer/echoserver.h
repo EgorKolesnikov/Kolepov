@@ -5,6 +5,7 @@
 #include <QMap>
 #include <QTcpSocket>
 #include "sqlwrapper.h"
+#include "securesocket.h"
 
 class QLabel;
 class QPushButton;
@@ -22,7 +23,7 @@ public:
 private slots:
     void sessionOpened(QLabel *statusLabel);
     void new_user();
-    void addNewUserToMap(QString name, QTcpSocket* tcpSocket);
+    void addNewUserToMap(QString name, SecureSocket* tcpSocket);
     void userAuthenticationFailed(QString username);
     void removeUserFromMap(QString name);
 
@@ -34,7 +35,7 @@ private slots:
 private:
     const qint16 PORT = 55555;
 
-    QMap<QString, QTcpSocket*> m_userSocket;
+    QMap<QString, SecureSocket*> m_userSocket;
 
     QTcpServer *tcpServer;
     QTextEdit *connections;

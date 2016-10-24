@@ -86,8 +86,8 @@ void EchoServer::new_user()
             );
 
 
-    connect(thread, SIGNAL(connectedUser(QString, QTcpSocket*)),
-            SLOT(addNewUserToMap(QString, QTcpSocket*))
+    connect(thread, SIGNAL(connectedUser(QString,  SecureSocket*)),
+            SLOT(addNewUserToMap(QString,  SecureSocket*))
             );
     connect(thread, SIGNAL(removeUser(QString)),
             SLOT(removeUserFromMap(QString))
@@ -112,7 +112,7 @@ void EchoServer::new_user()
     thread->start();
 }
 
-void EchoServer::addNewUserToMap(QString name, QTcpSocket* tcpSocket)
+void EchoServer::addNewUserToMap(QString name, SecureSocket *tcpSocket)
 {
     m_userSocket[name] = tcpSocket;
     connections->append(tr("%1 | %2 connected")
@@ -160,7 +160,7 @@ void EchoServer::sendMessage(const QString& name, int user_id, const QString& me
     for (auto it = m_userSocket.cbegin();
          it != m_userSocket.cend(); ++it)
     {
-        it.value()->write(block);
+        it.value()->writeBlock(block);
         it.value()->flush();
     }
 }
@@ -182,7 +182,7 @@ void EchoServer::deleteMessage(const QString &name, int message_id){
     for (auto it = m_userSocket.cbegin();
          it != m_userSocket.cend(); ++it)
     {
-        it.value()->write(block);
+        it.value()->writeBlock(block);
         it.value()->flush();
     }
 }
@@ -206,7 +206,7 @@ void EchoServer::modifyMessage(const QString &name, int message_id, const QStrin
     for (auto it = m_userSocket.cbegin();
          it != m_userSocket.cend(); ++it)
     {
-        it.value()->write(block);
+        it.value()->writeBlock(block);
         it.value()->flush();
     }
 }
@@ -232,7 +232,7 @@ void EchoServer::changeUserRole(const QString &who_changing, const QString &chan
 
     if (m_userSocket.contains(change_him))
     {
-        m_userSocket[change_him]->write(block);
+        m_userSocket[change_him]->writeBlock(block);
         m_userSocket[change_him]->flush();
     }
 }

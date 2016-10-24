@@ -31,14 +31,14 @@ public:
 
     void run() Q_DECL_OVERRIDE;
     int authenticate();
-    QChar authorize(const QString& user_name);
+    QChar authorize();
     int challenge(const QByteArray &clientPK);
-    void manageUserQuery(QDataStream& in, const QString& user_name, int user_id);
+    void manageUserQuery();
 
 
 signals:
     void error(QTcpSocket::SocketError socketError);
-    void connectedUser(QString name, QTcpSocket* socket);
+    void connectedUser(QString name, SecureSocket* socket);
     void userAuthenticationFailed(QString name);
     void removeUser(QString name);
 

@@ -179,7 +179,7 @@ void EchoClient::sendMessage()
 
     m_inputMessageEdit->clear();
 
-    m_tcpSocket->write(block);
+    m_tcpSocket->writeBlock(block);
     m_tcpSocket->flush();
 
 }
@@ -193,15 +193,17 @@ void EchoClient::serverDisconected()
 
 void EchoClient::readServerResponse()
 {
-    QDataStream in(m_tcpSocket);
-    in.setVersion(QDataStream::Qt_4_0);
+    QDataStream con(m_tcpSocket);
+    con.setVersion(QDataStream::Qt_4_0);
 
     QChar ind;
 
-    in.startTransaction();
-    if (!in.commitTransaction())
+    con.startTransaction();
+    if (!con.commitTransaction())
         return;
 
+    QDataStream in(m_tcpSocket->readBlock().second);
+    in.setVersion(QDataStream::Qt_4_0);
     in >> ind;
 
     if(ind == PROTOCOL::ADD_MESSAGE)
@@ -228,7 +230,7 @@ void EchoClient::readServerResponse()
         out.setVersion(QDataStream::Qt_4_0);
 
         out << PROTOCOL::GOT_MESSAGE_LIST;
-        m_tcpSocket->write(block);
+        m_tcpSocket->writeBlock(block);
         m_tcpSocket->flush();
 
     }
@@ -327,7 +329,7 @@ void EchoClient::deleteMessageRequest()
     out.setVersion(QDataStream::Qt_4_0);
 
     out << PROTOCOL::DELETE_MESSAGE << messageId;
-    m_tcpSocket->write(block);
+    m_tcpSocket->writeBlock(block);
     m_tcpSocket->flush();
 }
 
@@ -372,7 +374,7 @@ void EchoClient::modifyRequest()
             << messageId
             << newText;
 
-        m_tcpSocket->write(block);
+        m_tcpSocket->writeBlock(block);
         m_tcpSocket->flush();
     }
 }
@@ -400,7 +402,7 @@ void EchoClient::addModeratorRequest()
     out << PROTOCOL::SET_NEW_MODERATOR
         << m_userList->currentItem()->text();
 
-    m_tcpSocket->write(block);
+    m_tcpSocket->writeBlock(block);
     m_tcpSocket->flush();
 
     m_moderatorList->addItem(m_userList->currentItem()->text());
@@ -420,7 +422,7 @@ void EchoClient::deleteModeratorRequest()
     out << PROTOCOL::DELETE_MODERATOR
         << m_moderatorList->currentItem()->text();
 
-    m_tcpSocket->write(block);
+    m_tcpSocket->writeBlock(block);
     m_tcpSocket->flush();
 
     m_userList->addItem(m_moderatorList->currentItem()->text());

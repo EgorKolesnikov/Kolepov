@@ -74,15 +74,15 @@ void ServerThread::run()
         }
         out.device()->seek(sizeof(PROTOCOL::SEND_INIT_MESSAGES));
         out << numOfInitMessages;
-        m_tcpSocket->write(block);
+        m_tcpSocket->writeBlock(block);
         m_tcpSocket->flush();
     }
 
     m_tcpSocket->waitForReadyRead();
     m_tcpSocket->readAll();    //take from socket PROTOCOL::INIT_MESSAGE_LIST
     //If user is an admin - send him list of users
-    //QChar role = authorize(user);
-    QChar role = 'a';
+    QChar role = authorize();
+
     if (role == 'a')
     {
         block.clear();
@@ -103,7 +103,7 @@ void ServerThread::run()
         out.device()->seek(sizeof(PROTOCOL::USER_MODERATOR_LIST));
         out << membersCount;
 
-        m_tcpSocket->write(block);
+        m_tcpSocket->writeBlock(block);
         m_tcpSocket->flush();
     }
     else if (role == 'm')
@@ -113,7 +113,7 @@ void ServerThread::run()
         out.setVersion(QDataStream::Qt_4_0);
 
         out << PROTOCOL::INIT_MODERATOR;
-        m_tcpSocket->write(block);
+        m_tcpSocket->writeBlock(block);
         m_tcpSocket->flush();
     }
 
@@ -129,7 +129,7 @@ void ServerThread::run()
             if (!in.commitTransaction())
                 continue;
 
-            manageUserQuery(in, m_username, m_userID);
+            manageUserQuery();
         }
     }
     emit removeUser(m_username);
@@ -201,9 +201,9 @@ int ServerThread::authenticate()
     return USER_NOT_FOUND;
 }
 
-QChar ServerThread::authorize(const QString &user_name)
+QChar ServerThread::authorize()
 {
-    QSqlQuery query = database->get_user(user_name);
+    QSqlQuery query = database->get_user(m_username);
     if (query.isActive())
     {
         query.next();
@@ -215,54 +215,59 @@ QChar ServerThread::authorize(const QString &user_name)
     }
 }
 
-void ServerThread::manageUserQuery(QDataStream &in, const QString& user_name, int user_id){
+void ServerThread::manageUserQuery(){
+
+    auto data = m_tcpSocket->readBlock();
+    QDataStream in(data.second);
+    in.setVersion(QDataStream::Qt_4_0);
+
     QString request;
     QChar ind;
 
     in >> ind;
+    qDebug() << ind;
 
     if(ind == PROTOCOL::ADD_MESSAGE){
         in >> request;
-        qDebug() << user_name << request;
-        emit addMessage(user_name, user_id, request);
+        emit addMessage(m_username, m_userID, request);
 
     } else if (ind == PROTOCOL::DELETE_MESSAGE){
-        QChar role = authorize(user_name);
+        QChar role = authorize();
         if (role != 'a' && role != 'm')
         {
             return;
         }
         int message_id;
         in >> message_id;
-        emit deleteMessage(user_name, message_id);
+        emit deleteMessage(m_username, message_id);
 
     } else if (ind == PROTOCOL::MODIFY_MESSAGE){
-        QChar role = authorize(user_name);
+        QChar role = authorize();
         if (role != 'a' && role != 'm')
         {
             return;
         }
         int message_id;
         in >> message_id >> request;
-        emit modifyMessage(user_name, message_id, request);
+        emit modifyMessage(m_username, message_id, request);
 
     } else if (ind == PROTOCOL::SET_NEW_MODERATOR){
-        QChar role = authorize(user_name);
+        QChar role = authorize();
         if (role != 'a')
         {
             return;
         }
         in >> request;
-        emit changeUserRole(user_name, request, QString("m"));
+        emit changeUserRole(m_username, request, QString("m"));
 
     } else if (ind == PROTOCOL::DELETE_MODERATOR){
-        QChar role = authorize(user_name);
+        QChar role = authorize();
         if (role != 'a')
         {
             return;
         }
         in >> request;
-        emit changeUserRole(user_name, request, QString("u"));
+        emit changeUserRole(m_username, request, QString("u"));
 
     }
 }

@@ -6,6 +6,7 @@
 #include <QMap>
 
 #include "connectdialog.h"
+#include "securesocket.h"
 
 class EchoClient : public QWidget
 {
@@ -52,7 +53,7 @@ private:
 
     QWidget* m_adminWidget;
 
-    QTcpSocket *m_tcpSocket;
+    SecureSocket *m_tcpSocket;
 };
 
 #endif // ECHOCLIENT_H
