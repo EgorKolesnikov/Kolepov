@@ -202,12 +202,12 @@ void EchoClient::readServerResponse()
     if (!con.commitTransaction())
         return;
 
-    QDataStream in(m_tcpSocket->readBlock().second);
-    in.setVersion(QDataStream::Qt_4_0);
-    in >> ind;
-
-    while (ind != 0)
+    while (!m_tcpSocket->peek(1).isEmpty())
     {
+        QDataStream in(m_tcpSocket->readBlock().second);
+        in.setVersion(QDataStream::Qt_4_0);
+        in >> ind;
+
         if(ind == PROTOCOL::ADD_MESSAGE)
         {
             QString text, name;
@@ -295,9 +295,7 @@ void EchoClient::readServerResponse()
             enableModeratorMode();
         }
 
-        in >> ind;
-
-    } //while (ind != 0)
+    }
 
 
 }

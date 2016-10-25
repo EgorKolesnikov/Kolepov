@@ -236,16 +236,17 @@ QChar ServerThread::authorize()
 
 void ServerThread::manageUserQuery(){
 
-    auto data = m_tcpSocket->readBlock();
-    QDataStream in(data.second);
-    in.setVersion(QDataStream::Qt_4_0);
-
-    QString request;
-    QChar ind;
-
-    in >> ind;
-    while (ind != 0)
+    while (!m_tcpSocket->peek(1).isEmpty())
     {
+        auto data = m_tcpSocket->readBlock();
+        QDataStream in(data.second);
+        in.setVersion(QDataStream::Qt_4_0);
+
+        QString request;
+        QChar ind;
+
+        in >> ind;
+
         if(ind == PROTOCOL::ADD_MESSAGE){
             in >> request;
             emit addMessage(m_username, m_userID, request);
@@ -289,7 +290,6 @@ void ServerThread::manageUserQuery(){
             emit changeUserRole(m_username, request, QString("u"));
         }
 
-        in >> ind;
        }
 }
 
