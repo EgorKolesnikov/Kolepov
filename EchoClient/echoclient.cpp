@@ -206,92 +206,98 @@ void EchoClient::readServerResponse()
     in.setVersion(QDataStream::Qt_4_0);
     in >> ind;
 
-    if(ind == PROTOCOL::ADD_MESSAGE)
+    while (ind != 0)
     {
-        QString text, name;
-        int messageId;
-        in >> messageId >> name >> text;
-        addMessage(messageId, name, text);
-    }
-    else if(ind == PROTOCOL::SEND_INIT_MESSAGES)
-    {
-        QString text, name;
-        int messageId;
-        qint32 numOfMessages;
-        in >> numOfMessages;
-        for(int i = 0; i < numOfMessages; ++i)
+        if(ind == PROTOCOL::ADD_MESSAGE)
         {
+            QString text, name;
+            int messageId;
             in >> messageId >> name >> text;
             addMessage(messageId, name, text);
         }
-
-        QByteArray block;
-        QDataStream out(&block, QIODevice::WriteOnly);
-        out.setVersion(QDataStream::Qt_4_0);
-
-        out << PROTOCOL::GOT_MESSAGE_LIST;
-        m_tcpSocket->writeBlock(block);
-        m_tcpSocket->flush();
-
-    }
-    else if (ind == PROTOCOL::DELETE_MESSAGE)
-    {
-        int messageId;
-        in >> messageId;
-        deleteMessageResponse(messageId);
-    }
-    else if (ind == PROTOCOL::MODIFY_MESSAGE)
-    {
-        int messageId;
-        QString newText;
-        in >> messageId >> newText;
-        modifyResponse(messageId, newText);
-    }
-    else if (ind == PROTOCOL::USER_MODERATOR_LIST)
-    {
-        qint32 numOfMembers;
-        QString role;
-        QString name;
-        in >> numOfMembers;
-        for (int i = 0; i < numOfMembers; ++i)
+        else if(ind == PROTOCOL::SEND_INIT_MESSAGES)
         {
-            in >> name >> role;
-            if (role == "m")
-                m_moderatorList->addItem(name);
-            else if (role == "u")
-                m_userList->addItem(name);
+            QString text, name;
+            int messageId;
+            qint32 numOfMessages;
+            in >> numOfMessages;
+            for(int i = 0; i < numOfMessages; ++i)
+            {
+                in >> messageId >> name >> text;
+                addMessage(messageId, name, text);
+            }
+
+            QByteArray block;
+            QDataStream out(&block, QIODevice::WriteOnly);
+            out.setVersion(QDataStream::Qt_4_0);
+
+            out << PROTOCOL::GOT_MESSAGE_LIST;
+            m_tcpSocket->writeBlock(block);
+            m_tcpSocket->flush();
+
+        }
+        else if (ind == PROTOCOL::DELETE_MESSAGE)
+        {
+            int messageId;
+            in >> messageId;
+            deleteMessageResponse(messageId);
+        }
+        else if (ind == PROTOCOL::MODIFY_MESSAGE)
+        {
+            int messageId;
+            QString newText;
+            in >> messageId >> newText;
+            modifyResponse(messageId, newText);
+        }
+        else if (ind == PROTOCOL::USER_MODERATOR_LIST)
+        {
+            qint32 numOfMembers;
+            QString role;
+            QString name;
+            in >> numOfMembers;
+            for (int i = 0; i < numOfMembers; ++i)
+            {
+                in >> name >> role;
+                if (role == "m")
+                    m_moderatorList->addItem(name);
+                else if (role == "u")
+                    m_userList->addItem(name);
+            }
+
+            enableAdminMode();
+        }
+        else if (ind == PROTOCOL::SET_NEW_MODERATOR)
+        {
+            enableModeratorMode();
+            QMessageBox* msgBox = new QMessageBox(this);
+            msgBox->setAttribute(Qt::WA_DeleteOnClose);
+            msgBox->setStandardButtons(QMessageBox::Ok);
+            msgBox->setWindowTitle(tr("Moderation"));
+            msgBox->setText(tr("Now you are a moderator"));
+            msgBox->setIcon(QMessageBox::Information);
+            msgBox->show();
+        }
+        else if (ind == PROTOCOL::DELETE_MODERATOR)
+        {
+            disableModeratorMode();
+
+            QMessageBox* msgBox = new QMessageBox(this);
+            msgBox->setAttribute(Qt::WA_DeleteOnClose);
+            msgBox->setStandardButtons(QMessageBox::Ok);
+            msgBox->setWindowTitle(tr("Moderation"));
+            msgBox->setText(tr("Now you are not a moderator"));
+            msgBox->setIcon(QMessageBox::Information);
+            msgBox->show();
+
+        }
+        else if (ind == PROTOCOL::INIT_MODERATOR)
+        {
+            enableModeratorMode();
         }
 
-        enableAdminMode();
-    }
-    else if (ind == PROTOCOL::SET_NEW_MODERATOR)
-    {
-        enableModeratorMode();
-        QMessageBox* msgBox = new QMessageBox(this);
-        msgBox->setAttribute(Qt::WA_DeleteOnClose);
-        msgBox->setStandardButtons(QMessageBox::Ok);
-        msgBox->setWindowTitle(tr("Moderation"));
-        msgBox->setText(tr("Now you are a moderator"));
-        msgBox->setIcon(QMessageBox::Information);
-        msgBox->show();
-    }
-    else if (ind == PROTOCOL::DELETE_MODERATOR)
-    {
-        disableModeratorMode();
+        in >> ind;
 
-        QMessageBox* msgBox = new QMessageBox(this);
-        msgBox->setAttribute(Qt::WA_DeleteOnClose);
-        msgBox->setStandardButtons(QMessageBox::Ok);
-        msgBox->setWindowTitle(tr("Moderation"));
-        msgBox->setText(tr("Now you are not a moderator"));
-        msgBox->setIcon(QMessageBox::Information);
-        msgBox->show();
-
-    }
-    else if (ind == PROTOCOL::INIT_MODERATOR)
-    {
-        enableModeratorMode();
-    }
+    } //while (ind != 0)
 
 
 }

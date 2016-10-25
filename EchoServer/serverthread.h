@@ -61,6 +61,7 @@ private:
     static const int USER_NOT_FOUND = -1;
     static const int CHALLENGE_PASSED = 0;
     static const int CHALLENGE_FAILED = 1;
+    static const int INCORRECT_CERTIFACATE = 2;
 
 };
 

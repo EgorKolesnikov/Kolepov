@@ -193,9 +193,20 @@ void ConnectDialog::authenticate()
 {
     //read server_pk from file and decode from base64
     AutoSeededRandomPool rng;
-    FileSource file("server_pk", true, new Base64Decoder);
     RSA::PublicKey serverPK;
-    serverPK.BERDecode(file);
+    try
+    {
+        FileSource file("server_pk", true, new Base64Decoder);
+        serverPK.BERDecode(file);
+    }
+    catch (...)
+    {
+        QMessageBox::information(this, tr("Client Erroe"),
+                                 tr("Server PK is not correctly specified."));
+        this->reject();
+        return;
+    }
+
 
     //generate session key
     SecByteBlock key(AES::MAX_KEYLENGTH);

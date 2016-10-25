@@ -37,6 +37,9 @@ void ServerThread::run()
         case CHALLENGE_PASSED:
             out << PROTOCOL::LOGIN_OK;
             break;
+
+        case INCORRECT_CERTIFACATE:
+            return;
     }
 
     m_tcpSocket->writeBlock(block);
@@ -143,8 +146,17 @@ int ServerThread::challenge(const QByteArray& clientPK)
                 16);
     m_tcpSocket->writeBlock(texts.second);
 
-    m_tcpSocket->waitForReadyRead();
-    auto clientAnswer = m_tcpSocket->readBlock();
+    if (!m_tcpSocket->waitForReadyRead(10000))
+        return CHALLENGE_FAILED;
+    QPair<bool, QByteArray> clientAnswer;
+    try
+    {
+        clientAnswer = m_tcpSocket->readBlock();
+    }
+    catch (...)
+    {
+        return CHALLENGE_FAILED;
+    }
 
     if (!clientAnswer.first)
     {
@@ -177,12 +189,19 @@ int ServerThread::authenticate()
 
     std::string encSessionKey(data.constData(), data.length());
     SecByteBlock sessionKey(AES::MAX_KEYLENGTH);
+    try
+    {
     RSAES_OAEP_SHA_Decryptor d(serverSK);
     StringSource (encSessionKey, true,
                  new PK_DecryptorFilter(rng, d,
                         new ArraySink(sessionKey, sessionKey.size())
                  )
     );
+    }
+    catch (...)
+    {
+        return INCORRECT_CERTIFACATE;
+    }
 
     in >> m_username;
 
@@ -225,51 +244,53 @@ void ServerThread::manageUserQuery(){
     QChar ind;
 
     in >> ind;
-    qDebug() << ind;
+    while (ind != 0)
+    {
+        if(ind == PROTOCOL::ADD_MESSAGE){
+            in >> request;
+            emit addMessage(m_username, m_userID, request);
 
-    if(ind == PROTOCOL::ADD_MESSAGE){
-        in >> request;
-        emit addMessage(m_username, m_userID, request);
+        } else if (ind == PROTOCOL::DELETE_MESSAGE){
+            QChar role = authorize();
+            if (role != 'a' && role != 'm')
+            {
+                return;
+            }
+            int message_id;
+            in >> message_id;
+            emit deleteMessage(m_username, message_id);
 
-    } else if (ind == PROTOCOL::DELETE_MESSAGE){
-        QChar role = authorize();
-        if (role != 'a' && role != 'm')
-        {
-            return;
+        } else if (ind == PROTOCOL::MODIFY_MESSAGE){
+            QChar role = authorize();
+            if (role != 'a' && role != 'm')
+            {
+                return;
+            }
+            int message_id;
+            in >> message_id >> request;
+            emit modifyMessage(m_username, message_id, request);
+
+        } else if (ind == PROTOCOL::SET_NEW_MODERATOR){
+            QChar role = authorize();
+            if (role != 'a')
+            {
+                return;
+            }
+            in >> request;
+            emit changeUserRole(m_username, request, QString("m"));
+
+        } else if (ind == PROTOCOL::DELETE_MODERATOR){
+            QChar role = authorize();
+            if (role != 'a')
+            {
+                return;
+            }
+            in >> request;
+            emit changeUserRole(m_username, request, QString("u"));
         }
-        int message_id;
-        in >> message_id;
-        emit deleteMessage(m_username, message_id);
 
-    } else if (ind == PROTOCOL::MODIFY_MESSAGE){
-        QChar role = authorize();
-        if (role != 'a' && role != 'm')
-        {
-            return;
-        }
-        int message_id;
-        in >> message_id >> request;
-        emit modifyMessage(m_username, message_id, request);
-
-    } else if (ind == PROTOCOL::SET_NEW_MODERATOR){
-        QChar role = authorize();
-        if (role != 'a')
-        {
-            return;
-        }
-        in >> request;
-        emit changeUserRole(m_username, request, QString("m"));
-
-    } else if (ind == PROTOCOL::DELETE_MODERATOR){
-        QChar role = authorize();
-        if (role != 'a')
-        {
-            return;
-        }
-        in >> request;
-        emit changeUserRole(m_username, request, QString("u"));
-
-    }
+        in >> ind;
+       }
 }
 
 void ServerThread::disconnectedUser()
