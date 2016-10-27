@@ -32,6 +32,9 @@ private slots:
     void modifyMessage(const QString& name, int message_id, const QString& new_message_text);
     void changeUserRole(const QString& who_changing, const QString& change_him, QString new_role);
 
+signals:
+    void disconnectUser();
+
 private:
     const qint16 PORT = 55555;
 

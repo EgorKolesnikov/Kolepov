@@ -47,7 +47,7 @@ signals:
     void modifyMessage(const QString& name, int message_id, const QString& new_messate_text);
     void changeUserRole(const QString& who_changing, const QString& change_him, QString new_user_role);
 
-private slots:
+public slots:
     void disconnectedUser();
 
 private:
@@ -55,6 +55,7 @@ private:
     bool m_clientDisconnected;
     SqlWrapper *database;
     SecureSocket *m_tcpSocket;
+
     QString m_username;
     int m_userID;
 

@@ -59,6 +59,8 @@ QPair<bool, QByteArray> SecureSocket::readBlock()
         QPair<QByteArray, QByteArray> pair;
         QPair<bool, QByteArray> res;
         in >> pair;
+        if (m_usedIV.find(pair.first) != m_usedIV.end())
+            return qMakePair(false, QByteArray());
         try
         {
             res = Cryption::decryptMessage(m_key, pair);

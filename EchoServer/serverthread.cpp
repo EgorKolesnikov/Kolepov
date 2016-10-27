@@ -123,6 +123,7 @@ void ServerThread::run()
     //Main cycle
     while(!m_clientDisconnected)
     {
+        qDebug() << QTime::currentTime().toString();
         if (m_tcpSocket->waitForReadyRead())
         {
             QDataStream in(m_tcpSocket);
@@ -135,6 +136,7 @@ void ServerThread::run()
             manageUserQuery();
         }
     }
+
     emit removeUser(m_username);
 }
 
@@ -295,5 +297,8 @@ void ServerThread::manageUserQuery(){
 
 void ServerThread::disconnectedUser()
 {
+    qDebug() << "DDDDDIIIIIIIIIIIIIIIIIIIIIIIIIISSSSCONECTED!!!";
+    m_tcpSocket->disconnectFromHost();
+    m_tcpSocket->waitForDisconnected();
     m_clientDisconnected = true;
 }

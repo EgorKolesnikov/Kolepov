@@ -114,6 +114,20 @@ void EchoServer::new_user()
 
 void EchoServer::addNewUserToMap(QString name, SecureSocket *tcpSocket)
 {
+    if (m_userSocket.find(name) != m_userSocket.end())
+    {
+        connections->append(tr("%1 | %2 forced disconnected")
+                            .arg(QTime::currentTime().toString())
+                            .arg(name)
+                            );
+        qDebug() << name;
+        connect(this, SIGNAL(disconnectUser()),
+                (ServerThread*)sender(), SLOT(disconnectedUser())
+                );
+        emit disconnectUser();
+        return;
+
+    }
     m_userSocket[name] = tcpSocket;
     connections->append(tr("%1 | %2 connected")
                         .arg(QTime::currentTime().toString())
