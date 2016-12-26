@@ -30,6 +30,7 @@ private:
 public:
     SqlWrapper(
             QObject *parent = 0,
+            QString database_password = "",
             const QString& path = SqlWrapper::path_to_database + SqlWrapper::base_filename
     );
     ~SqlWrapper();

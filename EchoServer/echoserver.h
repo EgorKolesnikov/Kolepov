@@ -51,6 +51,7 @@ private:
 
     SqlWrapper *database;
     QString server_sk_file_path;
+    QString server_database_password;
 };
 
 #endif

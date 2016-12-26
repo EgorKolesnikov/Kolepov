@@ -18,13 +18,14 @@ QString SqlWrapper::path_to_database = "/home/kolegor/Code/Kolepov/EchoServer/";
 QString SqlWrapper::base_filename = "server_database.sqlite";
 
 
-SqlWrapper::SqlWrapper(QObject *parent, const QString& path)
+SqlWrapper::SqlWrapper(QObject *parent, QString database_password, const QString& path)
     : QObject(parent)
     , mutex_()
 {
     db_connection_ = QSqlDatabase::addDatabase("QSQLITE"); // QSqlDatabase::addDatabase("SQLITECIPHER");
     db_connection_.setDatabaseName(path);
-    db_connection_.setPassword("aKsip_ip");
+    db_connection_.setPassword(database_password);
+    // db_connection_.setPassword("aKsip_ip");
 
     if (!db_connection_.open()) {
         QMessageBox::critical(0, qApp->tr("Cannot open database."),

@@ -6,14 +6,16 @@
 InsertKeyDialog::InsertKeyDialog(QWidget *parent)
     : QDialog(parent)
     , keyPathLineEdit (new QLineEdit)
+    , keyDatabasePathLineEdit(new QLineEdit)
     , connectButton (new QPushButton(tr("Run server")))
 {
-    QLabel *keyFileLabel = new QLabel(tr("Key path:"));
-    QPushButton *browse = new QPushButton(tr("Browse..."));
+    QLabel *keyFileLabel = new QLabel(tr("Server key path:"));
+    QPushButton *browseServerKey = new QPushButton(tr("Browse..."));
+    QLabel *keyDatabaseFileLabel = new QLabel(tr("Database password:"));
     keyPathLineEdit->setReadOnly(true);
     connectButton->setEnabled(false);
 
-    connect(browse, SIGNAL(clicked(bool)),
+    connect(browseServerKey, SIGNAL(clicked(bool)),
             SLOT(browseServerKeyFile())
             );
     connect(connectButton, SIGNAL(clicked(bool)),
@@ -23,8 +25,10 @@ InsertKeyDialog::InsertKeyDialog(QWidget *parent)
 
     QGridLayout *mainLayout = new QGridLayout;
     mainLayout->addWidget(keyFileLabel);
-    mainLayout->addWidget(browse);
+    mainLayout->addWidget(browseServerKey);
     mainLayout->addWidget(keyPathLineEdit);
+    mainLayout->addWidget(keyDatabaseFileLabel);
+    mainLayout->addWidget(keyDatabasePathLineEdit);
     mainLayout->addWidget(connectButton);
     this->setLayout(mainLayout);
 }
@@ -52,6 +56,14 @@ void InsertKeyDialog::runServer(){
     this->accept();
 }
 
-QString InsertKeyDialog::getChoosenPath(){
+QString InsertKeyDialog::getChoosenServerKeyPath(){
     return keyPathLineEdit->text();
+}
+
+QString InsertKeyDialog::getChoosenDatabaseKeyPath(){
+    return keyDatabasePathLineEdit->text();
+}
+
+void InsertKeyDialog::enableConnectButton(){
+    connectButton->setEnabled(!keyDatabasePathLineEdit->text().isEmpty());
 }

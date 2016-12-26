@@ -13,7 +13,6 @@ EchoServer::EchoServer(QWidget *parent)
     : QWidget(parent)
     , tcpServer(Q_NULLPTR)
     , connections(new QTextEdit)
-    , database(new SqlWrapper(this))
 {
     QLabel *statusLabel = new QLabel;
     sessionOpened(statusLabel);
@@ -55,7 +54,9 @@ void EchoServer::show(){
 void EchoServer::dialogResult(int code){
     InsertKeyDialog *dialog = (InsertKeyDialog*)QObject::sender();
     if(dialog->result() == QDialog::Accepted){
-        server_sk_file_path = dialog->getChoosenPath();
+        server_sk_file_path = dialog->getChoosenServerKeyPath();
+        server_database_password = dialog->getChoosenDatabaseKeyPath();
+        database = new SqlWrapper(this, server_database_password);
         QWidget::show();
     }
     else{

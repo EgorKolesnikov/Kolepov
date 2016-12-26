@@ -10,7 +10,9 @@ class InsertKeyDialog : public QDialog
 
 public:
     explicit InsertKeyDialog(QWidget *parent = Q_NULLPTR);
-    QString getChoosenPath();
+    QString getChoosenServerKeyPath();
+    QString getChoosenDatabaseKeyPath();
+    void enableConnectButton();
 
 
 private slots:
@@ -19,6 +21,7 @@ private slots:
 
 private:
     QLineEdit *keyPathLineEdit;
+    QLineEdit *keyDatabasePathLineEdit;
     QPushButton *connectButton;
 };
 
