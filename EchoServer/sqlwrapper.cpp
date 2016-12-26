@@ -13,8 +13,8 @@ class Sleeper: public QThread
 };
 
 
-//QString SqlWrapper::path_to_database = "/home/kolegor/Kolepov/EchoServer/";
-QString SqlWrapper::path_to_database = "C:\\Users\\1\\Desktop\\projects\\Kolepov\\EchoServer\\";
+QString SqlWrapper::path_to_database = "/home/kolegor/Code/Kolepov/EchoServer/";
+//QString SqlWrapper::path_to_database = "C:\\Users\\1\\Desktop\\projects\\Kolepov\\EchoServer\\";
 QString SqlWrapper::base_filename = "server_database.sqlite";
 
 
@@ -22,7 +22,7 @@ SqlWrapper::SqlWrapper(QObject *parent, const QString& path)
     : QObject(parent)
     , mutex_()
 {
-    db_connection_ = QSqlDatabase::addDatabase("SQLITECIPHER");
+    db_connection_ = QSqlDatabase::addDatabase("QSQLITE"); // QSqlDatabase::addDatabase("SQLITECIPHER");
     db_connection_.setDatabaseName(path);
     db_connection_.setPassword("aKsip_ip");
 
@@ -51,7 +51,7 @@ const int wait = 100;
 
 QSqlQuery SqlWrapper::get_user(const QString &user_name){
     QMutexLocker locker(&mutex_);
-   // Sleeper::msleep(wait);
+    Sleeper::msleep(wait);
 
     QSqlQuery query;
     query.prepare("SELECT * FROM users WHERE name=?;");

@@ -1,12 +1,13 @@
 #include "serverthread.h"
 #include "protocol.h"
 
-ServerThread::ServerThread(int socketDescriptor, SqlWrapper *db,  QObject *parent)
+ServerThread::ServerThread(int socketDescriptor, SqlWrapper *db,  QObject *parent, QString& key_path)
     : QThread(parent)
     , m_socketDescriptor(socketDescriptor)
     , database(db)
     , m_clientDisconnected(false)
     , m_tcpSocket(new SecureSocket)
+    , path_to_key(key_path)
 {
 
 }
@@ -179,7 +180,7 @@ int ServerThread::authenticate()
 {
     //read server_sk from file and decode from base64
     AutoSeededRandomPool rng;
-    FileSource file("server_sk", true, new Base64Decoder);
+    FileSource file(path_to_key.toStdString().c_str(), true, new Base64Decoder);
     RSA::PrivateKey serverSK;
     serverSK.BERDecode(file);
 
@@ -216,9 +217,11 @@ int ServerThread::authenticate()
         {
             m_userID = query.value(0).toInt();
             int res = challenge(query.value(3).toByteArray());
+            qDebug() << "???" << res << "\n";
             return res;
         }
     }
+    qDebug() << "!!!!!!!!!!!!!!\n";
     return USER_NOT_FOUND;
 }
 

@@ -27,7 +27,7 @@ class ServerThread: public QThread
 
 
 public:
-    ServerThread(int socketDescriptor, SqlWrapper *users, QObject *parent);
+    ServerThread(int socketDescriptor, SqlWrapper *users, QObject *parent, QString &path_to_key);
 
     void run() Q_DECL_OVERRIDE;
     int authenticate();
@@ -57,6 +57,7 @@ private:
     SecureSocket *m_tcpSocket;
 
     QString m_username;
+    QString path_to_key;
     int m_userID;
 
     static const int USER_NOT_FOUND = -1;

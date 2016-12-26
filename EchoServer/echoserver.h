@@ -4,8 +4,10 @@
 #include <QWidget>
 #include <QMap>
 #include <QTcpSocket>
+#include "files.h"
 #include "sqlwrapper.h"
 #include "securesocket.h"
+#include "insertkeydialog.h"
 
 class QLabel;
 class QPushButton;
@@ -32,6 +34,10 @@ private slots:
     void modifyMessage(const QString& name, int message_id, const QString& new_message_text);
     void changeUserRole(const QString& who_changing, const QString& change_him, QString new_role);
 
+public slots:
+    void dialogResult(int code);
+    void show();
+
 signals:
     void disconnectUser();
 
@@ -44,6 +50,7 @@ private:
     QTextEdit *connections;
 
     SqlWrapper *database;
+    QString server_sk_file_path;
 };
 
 #endif

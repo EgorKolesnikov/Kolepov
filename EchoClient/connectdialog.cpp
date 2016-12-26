@@ -9,7 +9,8 @@ ConnectDialog::ConnectDialog(QWidget *parent)
     , portLineEdit(new QLineEdit)
     , loginLineEdit(new QLineEdit)
     , passwordLineEdit(new QLineEdit)
-    , keyPathLineEdit (new QLineEdit)
+    , keyPersonPathLineEdit (new QLineEdit)
+    , keyServerPathLineEdit (new QLineEdit)
     , connectButton(new QPushButton(tr("Connect")))
     , tcpSocket(new SecureSocket)
     , connectProgress(new QProgressBar)
@@ -56,9 +57,12 @@ ConnectDialog::ConnectDialog(QWidget *parent)
     loginLabel->setBuddy(loginLineEdit);
     QLabel *passwordLabel = new QLabel(tr("&Password:"));
     passwordLabel->setBuddy(passwordLineEdit);
-    QLabel *keyFileLabel = new QLabel(tr("Key file:"));
-    QPushButton *browse = new QPushButton(tr("Browse..."));
-    keyPathLineEdit->setReadOnly(true);
+    QLabel *keyPersonFileLabel = new QLabel(tr("Person Key file:"));
+    QPushButton *browsePersonKey = new QPushButton(tr("Browse..."));
+    QLabel *keyServerFileLabel = new QLabel(tr("Server Key file:"));
+    QPushButton *browseServerKey = new QPushButton(tr("Browse..."));
+    keyPersonPathLineEdit->setReadOnly(true);
+    keyServerPathLineEdit->setReadOnly(true);
 
     connectProgress->setTextVisible(false);
 
@@ -95,8 +99,11 @@ ConnectDialog::ConnectDialog(QWidget *parent)
     connect(tcpSocket, SIGNAL(connected()),
             SLOT(authenticate())
             );
-    connect(browse, SIGNAL(clicked(bool)),
-            SLOT(browseKeyFile())
+    connect(browsePersonKey, SIGNAL(clicked(bool)),
+            SLOT(browsePersonKeyFile())
+            );
+    connect(browseServerKey, SIGNAL(clicked(bool)),
+            SLOT(browseServerKeyFile())
             );
 
     QGroupBox *loginBox = new QGroupBox(tr("Login options")),
@@ -106,8 +113,10 @@ ConnectDialog::ConnectDialog(QWidget *parent)
 
     loginLayout->addRow(loginLabel, loginLineEdit);
     loginLayout->addRow(passwordLabel, passwordLineEdit);
-    loginLayout->addWidget(keyFileLabel);
-    loginLayout->addRow(browse, keyPathLineEdit);
+    loginLayout->addWidget(keyPersonFileLabel);
+    loginLayout->addRow(browsePersonKey, keyPersonPathLineEdit);
+    loginLayout->addWidget(keyServerFileLabel);
+    loginLayout->addRow(browseServerKey, keyServerPathLineEdit);
     loginBox->setLayout(loginLayout);
 
     connectLayout->addRow(hostLabel, hostCombo);
@@ -128,13 +137,43 @@ ConnectDialog::ConnectDialog(QWidget *parent)
 
 }
 
-void ConnectDialog::browseKeyFile()
+void ConnectDialog::browsePersonKeyFile()
 {
     QString fileName = QFileDialog::getOpenFileName(this, tr("Select key file"));
     if (!fileName.isNull())
     {
-        keyPathLineEdit->setText(fileName);
-        enableConnectButton();
+        QStorageInfo storage = QStorageInfo(fileName);
+        if(storage.fileSystemType() != "fuseblk" && storage.fileSystemType() != "FAT32"){
+            QMessageBox msgBox;
+            msgBox.setText("Error");
+            msgBox.setInformativeText("Invalid device.");
+            msgBox.setStandardButtons(QMessageBox::Ok);
+            msgBox.exec();
+        }
+        else{
+            keyPersonPathLineEdit->setText(fileName);
+            enableConnectButton();
+        }
+    }
+}
+
+void ConnectDialog::browseServerKeyFile()
+{
+    QString fileName = QFileDialog::getOpenFileName(this, tr("Select key file"));
+    if (!fileName.isNull())
+    {
+        QStorageInfo storage = QStorageInfo(fileName);
+        if(storage.fileSystemType() != "fuseblk" && storage.fileSystemType() != "FAT32"){
+            QMessageBox msgBox;
+            msgBox.setText("Error");
+            msgBox.setInformativeText("Invalid device.");
+            msgBox.setStandardButtons(QMessageBox::Ok);
+            msgBox.exec();
+        }
+        else{
+            keyServerPathLineEdit->setText(fileName);
+            enableConnectButton();
+        }
     }
 }
 
@@ -184,7 +223,8 @@ void ConnectDialog::enableConnectButton()
                                 !portLineEdit->text().isEmpty()     &&
                                 !loginLineEdit->text().isEmpty()    &&
                                 !passwordLineEdit->text().isEmpty() &&
-                                !keyPathLineEdit->text().isEmpty()
+                                !keyPersonPathLineEdit->text().isEmpty() &&
+                                !keyServerPathLineEdit->text().isEmpty()
                                 );
 
 }
@@ -196,12 +236,12 @@ void ConnectDialog::authenticate()
     RSA::PublicKey serverPK;
     try
     {
-        FileSource file("server_pk", true, new Base64Decoder);
+        FileSource file(keyServerPathLineEdit->text().toStdString().c_str(), true, new Base64Decoder);
         serverPK.BERDecode(file);
     }
     catch (...)
     {
-        QMessageBox::information(this, tr("Client Erroe"),
+        QMessageBox::information(this, tr("Client Error"),
                                  tr("Server PK is not correctly specified."));
         this->reject();
         return;
@@ -256,7 +296,7 @@ void ConnectDialog::authenticate()
     }
 
     QByteArray decrQuestion = Cryption::checkClientSK(
-                keyPathLineEdit->text(),
+                keyPersonPathLineEdit->text(),
                 passwordLineEdit->text(),
                 authEncr.second);
     tcpSocket->writeBlock(decrQuestion);

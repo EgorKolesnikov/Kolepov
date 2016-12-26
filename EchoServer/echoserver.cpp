@@ -44,6 +44,25 @@ EchoServer::EchoServer(QWidget *parent)
     setWindowTitle(QGuiApplication::applicationDisplayName());
 }
 
+void EchoServer::show(){
+    InsertKeyDialog *dialog = new InsertKeyDialog(this);
+    connect(dialog, SIGNAL(finished(int)), this, SLOT(dialogResult(int)),
+            Qt::QueuedConnection);
+    dialog->exec();
+    dialog->deleteLater();
+}
+
+void EchoServer::dialogResult(int code){
+    InsertKeyDialog *dialog = (InsertKeyDialog*)QObject::sender();
+    if(dialog->result() == QDialog::Accepted){
+        server_sk_file_path = dialog->getChoosenPath();
+        QWidget::show();
+    }
+    else{
+        QApplication::quit();
+    }
+}
+
 void EchoServer::sessionOpened(QLabel *statusLabel)
 {
     tcpServer = new QTcpServer(this);
@@ -77,7 +96,9 @@ void EchoServer::new_user()
     QTcpSocket *clientConnection = tcpServer->nextPendingConnection();
     ServerThread *thread = new ServerThread(clientConnection->socketDescriptor(),
                                             database,
-                                            this);
+                                            this,
+                                            server_sk_file_path
+                                            );
     connect(thread, SIGNAL(finished()),
             thread, SLOT(deleteLater())
             );

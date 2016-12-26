@@ -42,7 +42,8 @@ private slots:
     void displayError(QAbstractSocket::SocketError socketError);
     void enableConnectButton();
     void authenticate();
-    void browseKeyFile();
+    void browsePersonKeyFile();
+    void browseServerKeyFile();
 
 private:
     const quint16 PORT = 55555;
@@ -51,7 +52,8 @@ private:
     QLineEdit *portLineEdit;
     QLineEdit *loginLineEdit;
     QLineEdit *passwordLineEdit;
-    QLineEdit *keyPathLineEdit;
+    QLineEdit *keyPersonPathLineEdit;
+    QLineEdit *keyServerPathLineEdit;
     QPushButton *connectButton;
     QProgressBar *connectProgress;
 
