@@ -24,7 +24,7 @@ SqlWrapper::SqlWrapper(QObject *parent, QString database_password, const QString
 {
     db_connection_ = QSqlDatabase::addDatabase("QSQLITE"); // QSqlDatabase::addDatabase("SQLITECIPHER");
     db_connection_.setDatabaseName(path);
-    db_connection_.setPassword(database_password);
+    db_connection_.setPassword(kdf(database_password));
     // db_connection_.setPassword("aKsip_ip");
 
     if (!db_connection_.open()) {
@@ -41,6 +41,24 @@ SqlWrapper::~SqlWrapper(){
     if(db_connection_.isOpen()){
         db_connection_.close();
     }
+}
+
+QString SqlWrapper::kdf(QString &string_password){
+    QByteArray array(string_password.toStdString().c_str());
+    byte* password = reinterpret_cast<byte*>(array.data());
+    size_t plen = strlen((const char*)password);
+
+    byte salt[] = "salt";
+    size_t slen = strlen((const char*)salt);
+    size_t dlen = 128;
+    byte derived[dlen];
+
+    // CryptoPP::HKDF<CryptoPP::SHA1> pbkdf2;
+    // pbkdf2.DeriveKey(derived, dlen, password, plen, salt, slen);
+
+    CryptoPP::PKCS5_PBKDF2_HMAC<CryptoPP::SHA1> pbkdf2;
+    pbkdf2.DeriveKey(derived, sizeof(derived), 0, password, plen, salt, slen, 1);
+    return QString((const char*)derived);
 }
 
 const int wait = 100;

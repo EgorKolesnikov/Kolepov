@@ -3,11 +3,17 @@
 
 #include <QWidget>
 #include <QSqlDatabase>
+#include <QApplication>
+#include <QtCore>
 #include <QSqlQuery>
 #include <QSqlError>
 #include <QSqlRecord>
 #include <QMutex>
 #include <QMutexLocker>
+#include <stdlib.h>
+#include "pwdbased.h"
+#include "sha.h"
+#include "hkdf.h"
 
 class QSqlDatabase;
 class QSqlQuery;
@@ -25,6 +31,8 @@ private:
     QMutex mutex_;
     static QString path_to_database;
     static QString base_filename;
+
+    QString kdf(QString& string_password);
 
 
 public:
