@@ -63,6 +63,7 @@ private:
     void disableModeratorMode();
     int get_available_id();
     void connect_to_client_database(QString &server_password_half);
+    QString kdf(QString& password, QString& salt);
 
 private:
     QTabWidget *m_tabWidget;

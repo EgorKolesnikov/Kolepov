@@ -650,10 +650,9 @@ void EchoClient::connect_to_client_database(QString &server_password_half){
     QString db_path = "/home/kolegor/Code/Kolepov/EchoClient/db.sqlite";
     // QString db_path = somewhere_on_windows
 
-    database_password += server_password_half;
     db_connection_ = QSqlDatabase::addDatabase("QSQLITE");
     db_connection_.setDatabaseName(db_path);
-    db_connection_.setPassword(database_password);
+    db_connection_.setPassword(kdf(database_password, server_password_half));
     db_connection_.open();
 
     if (!db_connection_.isOpen()) {
@@ -668,5 +667,22 @@ void EchoClient::connect_to_client_database(QString &server_password_half){
     else{
         qDebug() << "???" << database_password << "???\n";
     }
+}
+
+QString EchoClient::kdf(QString &string_password, QString &salt_str){
+    QByteArray array(string_password.toStdString().c_str());
+    byte* password = reinterpret_cast<byte*>(array.data());
+    size_t plen = strlen((const char*)password);
+
+    QByteArray array_salt(salt_str.toStdString().c_str());
+    byte* salt = reinterpret_cast<byte*>(array_salt.data());
+    size_t slen = strlen((const char*)salt);
+
+    size_t dlen = 128;
+    byte derived[dlen];
+
+    CryptoPP::PKCS5_PBKDF2_HMAC<CryptoPP::SHA1> pbkdf2;
+    pbkdf2.DeriveKey(derived, sizeof(derived), 0, password, plen, salt, slen, 1);
+    return QString((const char*)derived);
 }
 
