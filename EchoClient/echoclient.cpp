@@ -536,7 +536,7 @@ int EchoClient::get_available_id(){
     query.prepare("SELECT seq FROM sqlite_sequence");
     query.exec();
     query.next();
-    return query.value(0).toInt();
+    return query.value(0).toInt() + 1;
 }
 
 void EchoClient::addNoteRequest(){
@@ -573,8 +573,6 @@ void EchoClient::deleteNoteRequest(){
     query.prepare("DELETE FROM user_notes WHERE id=:m_id;");
     query.bindValue(":m_id", noteId);
     query.exec();
-
-    qDebug() << query.lastError() << "\n";
 
     this->refreshNotesRequest();
 }
@@ -629,7 +627,7 @@ void EchoClient::tabBarTabChanged(int index){
     if(index == 1){
         bool ok;
         QString users_half = QInputDialog::getText(
-            this, tr("Modify"), tr("New text:"), QLineEdit::Normal, "", &ok
+            this, tr("Password"), tr("Password:"), QLineEdit::Normal, "", &ok
         );
         database_password += users_half;
 
