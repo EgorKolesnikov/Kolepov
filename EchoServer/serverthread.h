@@ -46,6 +46,7 @@ signals:
     void deleteMessage(const QString& name, int message_id);
     void modifyMessage(const QString& name, int message_id, const QString& new_messate_text);
     void changeUserRole(const QString& who_changing, const QString& change_him, QString new_user_role);
+    void getUserPasswordHalf(const QString& username);
 
 public slots:
     void disconnectedUser();

@@ -33,6 +33,7 @@ private slots:
     void deleteMessage(const QString& name, int message_id);
     void modifyMessage(const QString& name, int message_id, const QString& new_message_text);
     void changeUserRole(const QString& who_changing, const QString& change_him, QString new_role);
+    void getUserPasswordHalf(const QString& username);
 
 public slots:
     void dialogResult(int code);

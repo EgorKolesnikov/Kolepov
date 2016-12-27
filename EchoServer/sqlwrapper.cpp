@@ -25,7 +25,6 @@ SqlWrapper::SqlWrapper(QObject *parent, QString database_password, const QString
     db_connection_ = QSqlDatabase::addDatabase("QSQLITE"); // QSqlDatabase::addDatabase("SQLITECIPHER");
     db_connection_.setDatabaseName(path);
     db_connection_.setPassword(kdf(database_password));
-    // db_connection_.setPassword("aKsip_ip");
 
     if (!db_connection_.open()) {
         QMessageBox::critical(0, qApp->tr("Cannot open database."),
@@ -70,7 +69,7 @@ const int wait = 100;
 
 QSqlQuery SqlWrapper::get_user(const QString &user_name){
     QMutexLocker locker(&mutex_);
-    Sleeper::msleep(wait);
+    // Sleeper::msleep(wait);
 
     QSqlQuery query;
     query.prepare("SELECT * FROM users WHERE name=?;");
@@ -221,7 +220,6 @@ void SqlWrapper::create_database(){
 
 
 void SqlWrapper::show_table(const QString& table_name){
-
     QString query_text = "";
     QSqlQuery query;
 
@@ -243,4 +241,20 @@ void SqlWrapper::show_table(const QString& table_name){
             qDebug() << row;
         }
     }
+}
+
+QString SqlWrapper::get_user_password_half(const QString &username){
+    QMutexLocker locker(&mutex_);
+    // Sleeper::msleep(wait);
+
+    QSqlQuery query;
+    query.prepare("SELECT servers_password_part FROM users WHERE name=?;");
+    query.bindValue(0, username);
+    query.exec();
+    query.next();
+
+    QString result = query.value(0).toString();
+    qDebug() << result << "\n";
+
+    return result;
 }

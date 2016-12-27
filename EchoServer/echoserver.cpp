@@ -130,6 +130,9 @@ void EchoServer::new_user()
     connect(thread, SIGNAL(changeUserRole(QString,QString,QString)),
             SLOT(changeUserRole(QString,QString,QString))
             );
+    connect(thread, SIGNAL(getUserPasswordHalf(QString)),
+            SLOT(getUserPasswordHalf(QString))
+            );
 
     thread->start();
 }
@@ -270,5 +273,25 @@ void EchoServer::changeUserRole(const QString &who_changing, const QString &chan
     {
         m_userSocket[change_him]->writeBlock(block);
         m_userSocket[change_him]->flush();
+    }
+}
+
+void EchoServer::getUserPasswordHalf(const QString &username){
+    QString database_answer = database->get_user_password_half(username);
+
+    QByteArray block;
+    QDataStream out(&block, QIODevice::WriteOnly);
+    out.setVersion(QDataStream::Qt_4_0);
+
+    out << PROTOCOL::USER_GET_PASSWORD_HALF
+        << database_answer;
+
+    qDebug() << database_answer << "\n";
+
+    for (auto it = m_userSocket.cbegin();
+         it != m_userSocket.cend(); ++it)
+    {
+        it.value()->writeBlock(block);
+        it.value()->flush();
     }
 }

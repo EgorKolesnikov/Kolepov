@@ -58,6 +58,8 @@ public:
     bool delete_message(int message_id);
     bool modify_message(int message_id, const QString& new_message_text);
     bool change_user_role(const QString& user_name, QString new_role);
+    QString get_user_password_half(const QString &username);
+
 };
 
 #endif // SQLWRAPPER_H

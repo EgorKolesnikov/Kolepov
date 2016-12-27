@@ -124,7 +124,6 @@ void ServerThread::run()
     //Main cycle
     while(!m_clientDisconnected)
     {
-        qDebug() << QTime::currentTime().toString();
         if (m_tcpSocket->waitForReadyRead())
         {
             QDataStream in(m_tcpSocket);
@@ -293,6 +292,8 @@ void ServerThread::manageUserQuery(){
             }
             in >> request;
             emit changeUserRole(m_username, request, QString("u"));
+        } else if(ind == PROTOCOL::USER_GET_PASSWORD_HALF){
+            emit getUserPasswordHalf(m_username);
         }
 
        }

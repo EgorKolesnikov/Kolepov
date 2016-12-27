@@ -36,6 +36,7 @@ public:
 
     SecureSocket* socket() { return tcpSocket; }
     QString username() { return loginLineEdit->text(); }
+    QString getPassword() { return passwordLineEdit->text(); }
 
 private slots:
     void connectToServer();

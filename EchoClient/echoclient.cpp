@@ -12,6 +12,14 @@ EchoClient::EchoClient(QWidget *parent)
     , m_userList(new QListWidget)
     , m_moderatorList(new QListWidget)
     , m_adminWidget(new QWidget)
+    , m_notesWidget(new QWidget)
+    , m_notes(new QTableWidget)
+    , m_inputNoteEdit(new QLineEdit)
+    , m_addNoteButton(new QPushButton(tr("Add")))
+    , m_deleteNoteButton(new QPushButton(tr("Delete")))
+    , m_modifyNoteButton(new QPushButton(tr("Modify")))
+    , m_refreshNotesButton(new QPushButton(tr("Refresh")))
+    , database_password(QString(""))
 {
     m_sendButton->setEnabled(false);
 
@@ -64,7 +72,47 @@ EchoClient::EchoClient(QWidget *parent)
     m_modifyButton->setVisible(false);
 
     userWidget->setLayout(userLayout);
-    //
+
+
+    // construct notes tab
+    QVBoxLayout *notesLayout = new QVBoxLayout;
+
+    m_notes->setColumnCount(2);
+    m_notes->setRowCount(0);
+    m_notes->setHorizontalHeaderLabels({tr("ID"), tr("Note")});
+    m_notes->verticalHeader()->setVisible(false);
+    m_notes->hideColumn(0);
+    m_notes->setSelectionBehavior(QAbstractItemView::SelectRows);
+    m_notes->setSelectionMode(QAbstractItemView::SingleSelection);
+    m_notes->horizontalHeader()->setStretchLastSection(true);
+
+    QVBoxLayout *notes_btns = new QVBoxLayout;
+    m_modifyNoteButton->setIcon(modifyIcon);
+    m_modifyNoteButton->setIconSize(modifyIcon.size());
+    notes_btns->addWidget(m_modifyNoteButton);
+
+    m_deleteNoteButton->setIcon(QPixmap(":/icons/delete.png"));
+    m_deleteNoteButton->setIconSize(modifyIcon.size());
+    notes_btns->addWidget(m_deleteNoteButton);
+    notes_btns->addStretch();
+
+    notes_btns->addWidget(m_refreshNotesButton);
+    notes_btns->addStretch();
+
+    QHBoxLayout *firstNotesRow = new QHBoxLayout;
+    firstNotesRow->addWidget(m_notes, 1);
+    firstNotesRow->addLayout(notes_btns);
+
+    QHBoxLayout *secondNotesRow = new QHBoxLayout;
+    secondNotesRow->addWidget(m_inputNoteEdit, 1);
+    m_addNoteButton->setIcon(QPixmap(":/icons/send_message.png"));
+    m_addNoteButton->setIconSize(modifyIcon.size());
+    secondNotesRow->addWidget(m_addNoteButton);
+
+    notesLayout->addLayout(firstNotesRow, 1);
+    notesLayout->addLayout(secondNotesRow);
+    m_notesWidget->setLayout(notesLayout);
+
 
     //construct admin tab
     QHBoxLayout *moderatorLayout = new QHBoxLayout;
@@ -96,19 +144,15 @@ EchoClient::EchoClient(QWidget *parent)
     moderatorLayout->addLayout(usersL, 1);
 
     m_adminWidget->setLayout(moderatorLayout);
-    //
-
-    m_tabWidget->addTab(userWidget,
-                        QPixmap(":/icons/message.png"), tr("Messages"));
+    m_tabWidget->addTab(userWidget, QPixmap(":/icons/message.png"), tr("Messages"));
+    m_tabWidget->addTab(m_notesWidget, QPixmap(":/icons/modify.png"), tr("Notes"));
 
     QHBoxLayout *mainLayout = new QHBoxLayout;
     mainLayout->addWidget(m_tabWidget);
-
     this->setLayout(mainLayout);
 
     resize(776, 480);
     m_inputMessageEdit->setFocus();
-
 
     connect(m_sendButton, SIGNAL(clicked(bool)),
             SLOT(sendMessage())
@@ -131,6 +175,21 @@ EchoClient::EchoClient(QWidget *parent)
     connect(toUserButton, SIGNAL(clicked(bool)),
             SLOT(deleteModeratorRequest())
             );
+    connect(m_addNoteButton, SIGNAL(clicked(bool)),
+            SLOT(addNoteRequest())
+            );
+    connect(m_deleteNoteButton, SIGNAL(clicked(bool)),
+            SLOT(deleteNoteRequest())
+            );
+    connect(m_modifyNoteButton, SIGNAL(clicked(bool)),
+            SLOT(modifyNoteRequest())
+            );
+    connect(m_refreshNotesButton, SIGNAL(clicked(bool)),
+            SLOT(refreshNotesRequest())
+            );
+    connect(m_tabWidget, SIGNAL(tabBarClicked(int)),
+            SLOT(tabBarTabChanged(int))
+            );
 }
 
 void EchoClient::enableSendButton()
@@ -152,6 +211,8 @@ void EchoClient::dialogResult(int code){
 
     if(dialog->result() == QDialog::Accepted){
         m_tcpSocket = dialog->socket();
+
+        username = dialog->username();
         connect(m_tcpSocket, SIGNAL(readyRead()), SLOT(readServerResponse()));
         connect(m_tcpSocket, SIGNAL(disconnected()), SLOT(serverDisconected()));
         setWindowTitle(tr("Client - %1").arg(dialog->username()));
@@ -294,10 +355,12 @@ void EchoClient::readServerResponse()
         {
             enableModeratorMode();
         }
-
+        else if(ind == PROTOCOL::USER_GET_PASSWORD_HALF){
+            QString half;
+            in >> half;
+            connect_to_client_database(half);
+        }
     }
-
-
 }
 
 void EchoClient::addMessage(int messageId,
@@ -311,6 +374,17 @@ void EchoClient::addMessage(int messageId,
     items[0] = new QTableWidgetItem(user);
     items[1] = new QTableWidgetItem(QString::number(messageId));
     items[2] = new QTableWidgetItem(text);
+
+    try{
+        QSqlQuery query;
+        query.prepare("INSERT INTO user_notes (message) "
+                      "VALUES(:m_txt);");
+        query.bindValue(":m_txt", text);
+        query.exec();
+    }
+    catch(...){
+
+    }
 
     for (int i = 0; i < 3; ++i)
     {
@@ -452,4 +526,149 @@ void EchoClient::disableModeratorMode()
     m_modifyButton->setVisible(false);
 }
 
+
+/*
+* Notes widget
+*/
+
+int EchoClient::get_available_id(){
+    QSqlQuery query;
+    query.prepare("SELECT seq FROM sqlite_sequence");
+    query.exec();
+    query.next();
+    return query.value(0).toInt();
+}
+
+void EchoClient::addNoteRequest(){
+    int rowNum = m_notes->rowCount();
+    if (m_inputNoteEdit->text().isEmpty())
+        return;
+
+    QSqlQuery query;
+    int id_ = this->get_available_id();
+    query.prepare("INSERT INTO user_notes (id, message) VALUES(:m_id, :m_txt);");
+    query.bindValue(":m_txt", m_inputNoteEdit->text());
+    query.bindValue(":m_id", id_);
+    query.exec();
+
+    QTableWidgetItem* items[2];
+    items[0] = new QTableWidgetItem(QString::number(id_));
+    items[1] = new QTableWidgetItem(m_inputNoteEdit->text());
+
+    m_notes->insertRow(rowNum);
+    for (int i = 0; i < 2; ++i){
+        items[i]->setFlags(items[i]->flags() & (~Qt::ItemIsEditable));
+        m_notes->setItem(rowNum, i, items[i]);
+    }
+}
+
+void EchoClient::deleteNoteRequest(){
+    int curRow = m_notes->currentRow();
+    if (curRow == -1)
+        return;
+
+    int noteId = m_notes->item(curRow, 0)->data(QVariant::Int).toInt();
+
+    QSqlQuery query;
+    query.prepare("DELETE FROM user_notes WHERE id=:m_id;");
+    query.bindValue(":m_id", noteId);
+    query.exec();
+
+    qDebug() << query.lastError() << "\n";
+
+    this->refreshNotesRequest();
+}
+
+void EchoClient::modifyNoteRequest(){
+    int curRow = m_notes->currentRow();
+    if (curRow == -1)
+        return;
+
+    int noteId = m_notes->item(curRow, 0)->data(QVariant::Int).toInt();
+    const QString& text = m_notes->item(curRow, 1)->text();
+
+    bool ok;
+    QString newText = QInputDialog::getText(
+        this, tr("Modify"), tr("New text:"), QLineEdit::Normal, text, &ok
+    );
+    if (ok && !newText.isEmpty() && newText != text)
+    {
+        QSqlQuery query;
+        query.prepare("UPDATE user_notes SET message=:m_txt WHERE id=:m_id;");
+        query.bindValue(":m_id", noteId);
+        query.bindValue(":m_txt", newText);
+        query.exec();
+        this->refreshNotesRequest();
+    }
+}
+
+void EchoClient::refreshNotesRequest(){
+    QSqlQuery query;
+    query.prepare("SELECT * FROM user_notes;");
+    query.exec();
+
+    int row_num = 0;
+    m_notes->setRowCount(row_num);
+    if(query.isSelect()){
+        while(query.next()){
+            QTableWidgetItem* items[2];
+            items[0] = new QTableWidgetItem(query.value(0).toString());
+            items[1] = new QTableWidgetItem(query.value(1).toString());
+
+            m_notes->insertRow(row_num);
+            for (int i = 0; i < 2; ++i){
+                items[i]->setFlags(items[i]->flags() & (~Qt::ItemIsEditable));
+                m_notes->setItem(row_num, i, items[i]);
+            }
+            row_num += 1;
+        }
+    }
+}
+
+void EchoClient::tabBarTabChanged(int index){
+    if(index == 1){
+        bool ok;
+        QString users_half = QInputDialog::getText(
+            this, tr("Modify"), tr("New text:"), QLineEdit::Normal, "", &ok
+        );
+        database_password += users_half;
+
+        if(ok){
+            QByteArray block;
+            QDataStream out(&block, QIODevice::WriteOnly);
+            out.setVersion(QDataStream::Qt_4_0);
+
+            out << PROTOCOL::USER_GET_PASSWORD_HALF << username;
+            m_tcpSocket->writeBlock(block);
+            m_tcpSocket->flush();
+        }
+    }
+    else{
+        database_password = "";
+    }
+}
+
+void EchoClient::connect_to_client_database(QString &server_password_half){
+    QString db_path = "/home/kolegor/Code/Kolepov/EchoClient/db.sqlite";
+    // QString db_path = somewhere_on_windows
+
+    database_password += server_password_half;
+    db_connection_ = QSqlDatabase::addDatabase("QSQLITE");
+    db_connection_.setDatabaseName(db_path);
+    db_connection_.setPassword(database_password);
+    db_connection_.open();
+
+    if (!db_connection_.isOpen()) {
+        qDebug() << '!!!' << database_password << "!!!\n";
+        QMessageBox::critical(0, qApp->tr("Cannot open database."),
+            qApp->tr("Invalid database password.\n"
+                     "%1").arg(db_connection_.lastError().text()),
+                              QMessageBox::Cancel);
+        m_tabWidget->setCurrentIndex(0);
+        return;
+    }
+    else{
+        qDebug() << "???" << database_password << "???\n";
+    }
+}
 

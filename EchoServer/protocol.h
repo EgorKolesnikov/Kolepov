@@ -15,6 +15,7 @@ struct PROTOCOL{
     static const QChar USER_MODERATOR_LIST;
     static const QChar INIT_MODERATOR;
     static const QChar GOT_MESSAGE_LIST;
+    static const QChar USER_GET_PASSWORD_HALF;
 };
 
 
